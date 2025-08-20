@@ -60,7 +60,7 @@
         </div>
 
         <!-- Sidebar (Contacts List) -->
-        <div id="sidebar" class="sidebar flex flex-col w-full md:w-1/3 p-4 border-r-2 border-green-500 transition-transform duration-300 ease-in-out">
+        <div id="sidebar" class="sidebar flex flex-col w-full md:w-1/3 p-4 border-r-2 border-green-500 transition-transform duration-300 ease-in-out hidden">
             <div class="flex items-center justify-between pb-4 mb-4 border-b border-green-500">
                 <h1 class="font-bold text-lg">MHChat</h1>
                 <button id="close-sidebar-btn" class="md:hidden p-1 rounded-full hover:bg-green-700">
@@ -90,7 +90,7 @@
         <div id="main-content" class="flex-grow flex flex-col transition-transform duration-300 ease-in-out">
             
             <!-- Chat Screen -->
-            <div id="chat-screen" class="flex flex-col flex-grow">
+            <div id="chat-screen" class="flex flex-col flex-grow hidden">
                 <!-- Chat Header -->
                 <div class="p-4 bg-[#1a1a1a] border-b-2 border-green-500 flex items-center">
                     <button id="open-sidebar-btn" class="md:hidden mr-2 p-1 rounded-md hover:bg-[#002200]">
@@ -145,7 +145,7 @@
         let userId;
         let activeConvoId = null;
         let conversations = [];
-        let unsubscribeMessages = null; // Stores the function to unsubscribe from the messages listener
+        let unsubscribeMessages = null;
     
         // --- UI Element References ---
         const loadingScreen = document.getElementById('loading-screen');
@@ -183,13 +183,21 @@
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-    
-                // Wait for authentication state to be ready
+                
+                // Sign in the user first
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Wait for auth state to be confirmed
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
                         userIdEl.textContent = `ID: ${userId}`;
-                        // Check for user's display name, set a default if none exists
+                        
+                        // Set display name from Firestore or default
                         const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
                         const userDocSnap = await getDoc(userDocRef);
                         if (userDocSnap.exists()) {
@@ -198,29 +206,18 @@
                             await setDoc(userDocRef, { displayName: 'Guest User' });
                             displayNameEl.textContent = 'Guest User';
                         }
-    
-                        // Start real-time listeners after successful authentication
+                        
+                        // Show the app UI and start the listeners
+                        loadingScreen.classList.add('hidden');
+                        sidebar.classList.remove('hidden');
+                        chatScreen.classList.remove('hidden');
                         setupConversationListener(appId, userId);
-                        loadingScreen.style.display = 'none'; // Hide loading screen
-                        appContainer.style.display = 'flex';
-                    } else {
-                        // Sign in anonymously if no authenticated user
-                        try {
-                            if (typeof __initial_auth_token !== 'undefined') {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch (error) {
-                            console.error('Authentication failed:', error);
-                            loadingScreen.textContent = 'Failed to connect. Please try again.';
-                        }
                     }
                 });
-    
+
             } catch (error) {
                 console.error('Failed to initialize Firebase:', error);
-                loadingScreen.textContent = 'Failed to connect to Firebase.';
+                loadingScreen.textContent = 'Failed to connect. Please try again.';
             }
         }
     
@@ -235,14 +232,12 @@
                 conversations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderConversations();
                 if (conversations.length > 0 && !activeConvoId) {
-                    // Set the first conversation as active by default
                     setActiveConversation(conversations[0].id);
                 }
             });
         }
     
         function setupMessagesListener(appId, conversationId) {
-            // Unsubscribe from any previous message listener
             if (unsubscribeMessages) {
                 unsubscribeMessages();
             }
@@ -255,7 +250,7 @@
             const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'conversations', conversationId, 'messages');
     
             unsubscribeMessages = onSnapshot(messagesRef, (snapshot) => {
-                const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.timestamp - b.timestamp);
+                const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis());
                 renderMessages(messages);
             });
         }
@@ -301,7 +296,6 @@
                 `;
                 messagesList.appendChild(messageEl);
             });
-            // Auto-scroll to the bottom
             messagesList.scrollTop = messagesList.scrollHeight;
         }
     
@@ -314,7 +308,7 @@
                 chatHeaderTitle.textContent = otherParticipantId ? `Chat with User: ${otherParticipantId.substring(0, 8)}...` : 'Unknown User';
                 setupMessagesListener(typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', activeConvoId);
             }
-            renderConversations(); // Re-render to update the active state
+            renderConversations();
         }
     
         // --- Event Handlers ---
@@ -336,25 +330,23 @@
         });
     
         addContactBtn.addEventListener('click', () => {
-            chatScreen.style.display = 'none';
-            addContactScreen.style.display = 'flex';
+            chatScreen.classList.add('hidden');
+            addContactScreen.classList.remove('hidden');
         });
 
         cancelAddBtn.addEventListener('click', () => {
-            addContactScreen.style.display = 'none';
-            chatScreen.style.display = 'flex';
+            addContactScreen.classList.add('hidden');
+            chatScreen.classList.remove('hidden');
             contactIdInput.value = '';
         });
     
         addContactSubmitBtn.addEventListener('click', async () => {
             const contactId = contactIdInput.value.trim();
             if (!contactId || contactId === userId) {
-                // You could show a message here instead of just logging
                 return;
             }
             
             try {
-                // Check if a conversation already exists
                 const q = query(
                     collection(db, 'artifacts', __app_id, 'public', 'data', 'conversations'),
                     where('participants', 'array-contains-any', [userId, contactId])
@@ -377,8 +369,8 @@
                     setActiveConversation(newConvoRef.id);
                 }
 
-                addContactScreen.style.display = 'none';
-                chatScreen.style.display = 'flex';
+                addContactScreen.classList.add('hidden');
+                chatScreen.classList.remove('hidden');
                 contactIdInput.value = '';
 
             } catch (error) {
