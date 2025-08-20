@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MysticAI Chatbot</title>
-    <!-- Tailwind CSS CDN is loaded here for styling -->
+    <!-- Tailwind CSS CDN for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom CSS for animations and overall style -->
+    <!-- Custom CSS for animations and futuristic theme -->
     <style>
         body {
             font-family: 'Roboto Mono', monospace;
@@ -26,23 +26,23 @@
     </style>
 </head>
 <body>
-    <!-- The main container of the app -->
+    <!-- Main container of the application -->
     <div class="flex justify-center items-center min-h-screen p-5 bg-black text-green-500 font-mono">
         <div id="chatbot-container" class="w-full max-w-3xl h-[85vh] flex flex-col bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md overflow-hidden">
             
-            <!-- Chat window -->
+            <!-- Chat window for messages -->
             <div id="chat-window" class="flex-grow p-8 overflow-y-auto flex flex-col gap-6 whitespace-pre-wrap">
-                <!-- Initial messages are dynamically added by JavaScript -->
+                <!-- Chat messages will be dynamically added here by JavaScript -->
             </div>
 
-            <!-- Loading indicator -->
+            <!-- Loading indicator for API calls -->
             <div id="loading-indicator" class="hidden flex justify-center items-center gap-2 my-4">
                 <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-[bounce_1s_infinite]"></div>
                 <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-[bounce_1s_infinite_0.2s]"></div>
                 <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-[bounce_1s_infinite_0.4s]"></div>
             </div>
 
-            <!-- Input form -->
+            <!-- Input form for user queries -->
             <form id="input-form" class="flex flex-col p-6 gap-4 border-t-2 border-green-500">
                 <textarea
                     id="user-input"
@@ -61,8 +61,13 @@
         </div>
     </div>
 
-    <!-- Main script for the application logic -->
-    <script type="text/javascript">
+    <!-- Firebase SDKs are imported here -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        // --- Core Application Logic ---
+
         // Get elements from the DOM
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
@@ -70,9 +75,14 @@
         const submitButton = document.getElementById('submit-button');
         const loadingIndicator = document.getElementById('loading-indicator');
 
-        // This variable is intentionally left as an empty string. The system automatically handles the API key.
-        const apiKey = typeof __api_key !== 'undefined' ? __api_key : '';
+        // These variables are provided by the Canvas environment for secure access.
+        // On your public website, a backend function will need to provide these.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         const selectedModel = "gemini-2.5-flash-preview-05-20";
+
+        // Firebase service instances
+        let app, auth;
 
         // Function to add a new message to the chat window
         function addMessage(text, sender) {
@@ -93,7 +103,7 @@
             }
 
             chatWindow.appendChild(messageElement);
-            // Scroll to the bottom
+            // Scroll to the bottom to show the newest message
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
@@ -118,8 +128,8 @@
             userInput.value = '';
             setLoading(true);
 
-            // API URL and payload
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+            // API URL and payload, using a securely provided API key from the environment.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${firebaseConfig.apiKey}`;
             const payload = { 
                 contents: [{ 
                     role: "user", 
@@ -128,49 +138,104 @@
             };
 
             try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                // Exponential backoff for retries to handle rate limiting or temporary network issues
+                let response, result;
+                let retries = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000; // 1 second
 
-                const result = await response.json();
+                while (retries < maxRetries) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        result = await response.json();
+                        
+                        if (response.ok) {
+                            break; // Success, exit the retry loop
+                        } else if (response.status === 429) {
+                            // Too Many Requests, retry with delay
+                            console.warn(`Rate limit exceeded. Retrying in ${baseDelay * Math.pow(2, retries)}ms...`);
+                            await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
+                            retries++;
+                        } else {
+                            // Other error, break and handle it
+                            break;
+                        }
+                    } catch (error) {
+                        console.error("Fetch attempt failed:", error);
+                        await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
+                        retries++;
+                    }
+                }
+
                 let aiResponse = "Response failed. Please try again.";
-
-                if (response.ok && result.candidates && result.candidates.length > 0 &&
+                
+                if (result && result.candidates && result.candidates.length > 0 &&
                     result.candidates[0].content && result.candidates[0].content.parts &&
                     result.candidates[0].content.parts.length > 0) {
                     aiResponse = result.candidates[0].content.parts[0].text;
-                } else if (result.error) {
+                } else if (result && result.error) {
                     aiResponse = `[ERROR] ${result.error.message}`;
                     console.error('API Error:', result);
+                } else {
+                    aiResponse = "MysticAI> [ERROR] Failed to get a valid response from the API after multiple attempts.";
                 }
 
                 addMessage(`MysticAI> ${aiResponse}`, 'ai');
+
             } catch (error) {
-                console.error("Failed to fetch from API:", error);
+                console.error("Connection failed:", error);
                 addMessage("MysticAI> [ERROR] Connection to the AI failed. Please check your network or try again later.", 'ai');
             } finally {
                 setLoading(false);
             }
         }
 
-        // Initialize the app
-        window.onload = function() {
-            addMessage('C:\\> Initializing MysticAI...', 'ai');
-            setTimeout(() => addMessage('C:\\> Loading available models...', 'ai'), 1000);
-            setTimeout(() => addMessage('C:\\> Models loaded. MysticAI is online. Awaiting your query.', 'ai'), 2000);
-        };
+        // Initialize the Firebase app and authenticate the user
+        async function initializeAppAndAuth() {
+            try {
+                if (Object.keys(firebaseConfig).length > 0) {
+                    app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
 
-        // Add the event listener for form submission
-        inputForm.addEventListener('submit', handleFormSubmit);
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Firebase signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Firebase signed in anonymously.");
+                    }
+                } else {
+                    console.error("Firebase config is not available. Please ensure it's set up in your environment.");
+                }
 
-        // Also add an event listener for the 'Enter' key in the text area
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                handleFormSubmit(e);
+                // Initial messages after successful authentication
+                addMessage('C:\\> Initializing MysticAI...', 'ai');
+                setTimeout(() => addMessage('C:\\> Loading available models...', 'ai'), 1000);
+                setTimeout(() => addMessage('C:\\> Models loaded. MysticAI is online. Awaiting your query.', 'ai'), 2000);
+
+                // Add the event listener for form submission
+                inputForm.addEventListener('submit', handleFormSubmit);
+
+                // Also add an event listener for the 'Enter' key in the text area
+                userInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        handleFormSubmit(e);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization or authentication failed:", error);
+                addMessage(`MysticAI> [ERROR] Failed to connect to Firebase. Please check your project setup.`, 'ai');
             }
-        });
+        }
+
+        // Initialize on window load
+        window.onload = initializeAppAndAuth;
     </script>
 </body>
 </html>
