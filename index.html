@@ -4,483 +4,400 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MHChat</title>
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* This is a simple, custom stylesheet for the app */
         body {
-            font-family: 'Roboto Mono', monospace;
-            background-color: #000000;
-            color: #00ff00;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 1.25rem;
-            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            color: #0f0;
         }
-
-        /* Custom animation for the blinking cursor effect */
-        @keyframes blink {
-            50% { opacity: 0; }
-        }
-        .blinking-cursor::after {
-            content: '_';
-            animation: blink 1s step-end infinite;
-        }
-
-        /* Custom scrollbar for a themed look */
-        ::-webkit-scrollbar {
+        /* Custom scrollbar for better aesthetics */
+        .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
         }
-        ::-webkit-scrollbar-track {
-            background: #0a0a0a;
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1a1a1a;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #00ff00;
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #0f0;
             border-radius: 4px;
+            border: 2px solid #1a1a1a;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #00cc00;
+        .message-bubble {
+            box-shadow: 0 0 5px #0f0;
         }
-
-        /* Responsive sidebar for mobile view */
-        #sidebar.mobile-open {
-            display: flex;
-            transform: translateX(0);
+        .self-message {
+            background-color: #004d00;
         }
-
+        .friend-message {
+            background-color: #002200;
+        }
         @media (max-width: 767px) {
-            #sidebar {
-                position: absolute;
-                top: 0;
-                left: 0;
-                height: 100%;
-                z-index: 50;
+            .sidebar {
                 transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
+                position: absolute;
+                z-index: 10;
+                height: 100%;
+                width: 100%;
             }
-            #main-chat-screen {
-                flex-direction: column;
+            .sidebar.open {
+                transform: translateX(0);
             }
         }
     </style>
 </head>
-<body class="bg-black text-green-500 font-mono">
+<body class="bg-black text-green-500 font-mono flex items-center justify-center min-h-screen p-5">
 
-    <!-- IMPORTANT: This is a static demo. All data is stored in memory and will be lost on page refresh. -->
+    <!-- Main Container -->
+    <div id="app-container" class="w-full max-w-5xl h-[90vh] flex flex-col md:flex-row bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-lg overflow-hidden relative">
 
-    <!-- Main Application Container that manages screen views -->
-    <div id="app-container" class="flex justify-center items-center min-h-screen p-5">
-        
-        <!-- Main Chat Screen -->
-        <div id="main-chat-screen" class="screen w-full max-w-5xl h-[85vh] flex flex-col md:flex-row bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md overflow-hidden">
+        <!-- Loading State -->
+        <div id="loading-screen" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-20">
+            <p>Connecting to server...</p>
+        </div>
+
+        <!-- Sidebar (Contacts List) -->
+        <div id="sidebar" class="sidebar flex flex-col w-full md:w-1/3 p-4 border-r-2 border-green-500 transition-transform duration-300 ease-in-out">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-green-500">
+                <h1 class="font-bold text-lg">MHChat</h1>
+                <button id="close-sidebar-btn" class="md:hidden p-1 rounded-full hover:bg-green-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-green-500"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>
+                </button>
+            </div>
             
-            <!-- Sidebar for contacts and groups -->
-            <div id="sidebar" class="w-full md:w-1/3 hidden md:flex flex-col p-4 overflow-y-auto">
-                <div class="text-center font-bold text-lg mb-4">
-                    MHChat
-                    <span id="current-user-id-display" class="font-normal text-xs text-gray-400 block break-all mt-1"></span>
-                </div>
-                
-                <div class="flex flex-col gap-2 mb-4">
-                    <button id="add-contact-btn" class="flex-grow p-2 bg-[#002200] border-2 border-green-500 rounded-md hover:shadow-[0_0_8px_#00ff00]">New Contact</button>
-                    <button id="create-group-btn" class="flex-grow p-2 bg-[#002200] border-2 border-green-500 rounded-md hover:shadow-[0_0_8px_#00ff00]">New Group</button>
-                    <button id="settings-btn" class="flex-grow p-2 bg-[#002200] border-2 border-green-500 rounded-md hover:shadow-[0_0_8px_#00ff00]">Settings</button>
-                </div>
-
-                <div id="contact-list" class="flex-grow flex flex-col gap-2">
-                    <div class="text-xs text-gray-500">CONVERSATIONS</div>
-                    <!-- Conversation items will be added here dynamically -->
-                </div>
+            <div class="flex justify-between items-center mb-4">
+                <p id="user-info" class="text-sm">
+                    <span id="display-name" class="font-bold">Guest User</span>
+                    <br/>
+                    <span id="user-id" class="text-xs break-all text-gray-400">ID: ...</span>
+                </p>
             </div>
 
-            <!-- Main chat window -->
-            <div id="chat-window-container" class="flex-grow flex flex-col w-full">
-                <div id="chat-header" class="p-4 bg-[#1a1a1a] border-b-2 border-green-500 text-center font-bold flex items-center gap-4">
-                    <button id="menu-btn" class="md:hidden p-1 rounded-md hover:bg-[#002200]">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
+            <button id="add-contact-btn" class="flex items-center justify-center w-full p-2 mb-4 bg-[#002200] border-2 border-green-500 rounded-md hover:shadow-[0_0_8px_#00ff00] transition-shadow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-5 w-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="16" x2="16" y1="11" y2="17"></line><line x1="19" x2="13" y1="14" y2="14"></line></svg>
+                Add New Contact
+            </button>
+
+            <div id="conversations-list" class="flex-grow overflow-y-auto custom-scrollbar">
+                <!-- Conversations will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content" class="flex-grow flex flex-col transition-transform duration-300 ease-in-out">
+            
+            <!-- Chat Screen -->
+            <div id="chat-screen" class="flex flex-col flex-grow">
+                <!-- Chat Header -->
+                <div class="p-4 bg-[#1a1a1a] border-b-2 border-green-500 flex items-center">
+                    <button id="open-sidebar-btn" class="md:hidden mr-2 p-1 rounded-md hover:bg-[#002200]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
                     </button>
-                    <span id="chat-header-text" class="flex-grow text-center">No Conversation Selected</span>
+                    <h2 id="chat-header-title" class="flex-grow font-bold text-center">Select a Conversation</h2>
                 </div>
 
-                <div id="chat-window" class="flex-grow p-8 overflow-y-auto flex flex-col gap-4 whitespace-pre-wrap">
-                    <!-- Messages will be added here dynamically -->
+                <!-- Message List -->
+                <div id="messages-list" class="flex-grow p-4 overflow-y-auto flex flex-col gap-4 whitespace-pre-wrap custom-scrollbar">
+                    <!-- Messages will be rendered here -->
                 </div>
 
-                <form id="chat-input-form" class="flex p-4 gap-2 border-t-2 border-green-500">
-                    <textarea
-                        id="chat-user-input"
-                        rows="1"
-                        placeholder=">_ Type your message..."
-                        class="flex-grow text-base bg-black placeholder-gray-400 focus:ring-green-500 focus:border-green-500 border-green-500 resize-none rounded-md p-2 transition-all duration-200"
-                    ></textarea>
-                    <button
-                        type="submit"
-                        id="chat-send-btn"
-                        class="bg-green-500 text-black font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_15px_#00ff00]"
-                        disabled
-                    >
-                        Send
+                <!-- Message Input Form -->
+                <form id="message-form" class="flex p-4 gap-2 border-t-2 border-green-500">
+                    <input id="message-input" type="text" placeholder=">_ Type your message..." class="flex-grow text-base bg-black placeholder-gray-400 focus:ring-green-500 focus:border-green-500 border border-green-500 resize-none rounded-md p-2 transition-all duration-200">
+                    <button id="send-btn" type="submit" class="bg-green-500 text-black font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_15px_#00ff00]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="m22 2-7 19-4-5-5-4 19-7z"></path><path d="M11 11.2 17 17"></path></svg>
                     </button>
                 </form>
             </div>
-        </div>
 
-        <!-- Add Contact Screen -->
-        <div id="add-contact-screen" class="screen w-full max-w-5xl h-[85vh] hidden flex-col justify-center items-center bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md p-8">
-            <div class="w-full max-w-md">
-                <h2 class="text-xl font-bold mb-4 text-center">Add New Contact</h2>
-                <p class="text-sm text-gray-400 mb-2">Enter the full user ID:</p>
-                <input type="text" id="contact-id-input" placeholder="Enter User ID" class="w-full p-2 bg-black border border-green-500 rounded-md mb-2">
-                <p class="text-sm text-gray-400 mb-2">Give a nickname (optional):</p>
-                <input type="text" id="contact-alias-input" placeholder="Nickname" class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
-                <p id="contact-search-result" class="mt-4 hidden text-center"></p>
-                <div class="flex justify-end gap-2 mt-4">
-                    <button id="cancel-contact-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
-                    <button id="add-contact-submit-btn" class="p-2 bg-green-500 text-black font-bold rounded-md">Add</button>
+            <!-- Add Contact Screen -->
+            <div id="add-contact-screen" class="hidden flex-grow flex-col justify-center items-center p-8">
+                <div class="w-full max-w-md">
+                    <h2 class="text-2xl font-bold mb-4 text-center">Add New Contact</h2>
+                    <p class="text-sm text-gray-400 mb-2">Enter your friend's full User ID:</p>
+                    <input id="contact-id-input" type="text" placeholder="Paste User ID here..." class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button id="cancel-add-btn" class="p-2 bg-gray-700 rounded-md transition-colors hover:bg-gray-600">
+                            Cancel
+                        </button>
+                        <button id="add-contact-submit-btn" class="flex items-center p-2 bg-green-500 text-black font-bold rounded-md hover:shadow-md transition-shadow">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-5 w-5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+                            Add Friend
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Create Group Screen -->
-        <div id="create-group-screen" class="screen w-full max-w-5xl h-[85vh] hidden flex-col justify-center items-center bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md p-8">
-            <div class="w-full max-w-md">
-                <h2 class="text-xl font-bold mb-4 text-center">Create New Group</h2>
-                <input type="text" id="group-name-input" placeholder="Group Name" class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
-                <div id="contact-selection-list" class="flex flex-col gap-2 max-h-40 overflow-y-auto mb-4 border border-green-500 p-2 rounded-md">
-                    <!-- Contacts will be dynamically added here -->
-                </div>
-                <p id="group-error-message" class="text-red-500 mt-4 hidden text-center"></p>
-                <div class="flex justify-end gap-2 mt-4">
-                    <button id="cancel-group-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
-                    <button id="create-group-submit-btn" class="p-2 bg-green-500 text-black font-bold rounded-md">Create Group</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Screen -->
-        <div id="settings-screen" class="screen w-full max-w-5xl h-[85vh] hidden flex-col justify-center items-center bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md p-8">
-            <div class="w-full max-w-md">
-                <h2 class="text-xl font-bold mb-4 text-center">Settings</h2>
-                <p class="text-sm text-gray-400 mb-2">Current User ID: <span id="settings-user-id-display" class="font-bold break-all"></span></p>
-                <p class="text-sm text-gray-400 mb-2">Change your display name:</p>
-                <input type="text" id="display-name-input" placeholder="New Display Name" class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
-                <div class="flex justify-end gap-2 mt-4">
-                    <button id="cancel-settings-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
-                    <button id="save-name-btn" class="p-2 bg-green-500 text-black font-bold rounded-md">Save</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Custom Confirmation Modal -->
-        <div id="delete-confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
-            <div class="bg-[#0a0a0a] p-8 rounded-md border-2 border-green-500 max-w-sm w-full text-center">
-                <p id="modal-text" class="mb-4">Are you sure you want to delete this conversation?</p>
-                <div class="flex justify-center gap-4">
-                    <button id="modal-cancel-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
-                    <button id="modal-confirm-btn" class="p-2 bg-red-500 text-black font-bold rounded-md">Delete</button>
-                </div>
-            </div>
-        </div>
     </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, collection, query, where, onSnapshot, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    <script>
-        // --- IMPORTANT: Static JavaScript Logic ---
-        // This is a front-end demo. All data is stored in memory and will be lost on page refresh.
-
-        document.addEventListener('DOMContentLoaded', () => {
-
-            // --- UI Elements ---
-            const screens = {
-                mainChat: document.getElementById('main-chat-screen'),
-                addContact: document.getElementById('add-contact-screen'),
-                createGroup: document.getElementById('create-group-screen'),
-                settings: document.getElementById('settings-screen')
-            };
-            const currentUserIdDisplay = document.getElementById('current-user-id-display');
-            const chatWindow = document.getElementById('chat-window');
-            const chatHeaderText = document.getElementById('chat-header-text');
-            const chatUserInput = document.getElementById('chat-user-input');
-            const chatInputForm = document.getElementById('chat-input-form');
-            const chatSendBtn = document.getElementById('chat-send-btn');
-            const contactListDiv = document.getElementById('contact-list');
-            const addContactBtn = document.getElementById('add-contact-btn');
-            const createGroupBtn = document.getElementById('create-group-btn');
-            const settingsBtn = document.getElementById('settings-btn');
-            const menuBtn = document.getElementById('menu-btn');
-            const sidebar = document.getElementById('sidebar');
-
-            const contactIdInput = document.getElementById('contact-id-input');
-            const contactAliasInput = document.getElementById('contact-alias-input');
-            const addContactSubmitBtn = document.getElementById('add-contact-submit-btn');
-            const contactSearchResult = document.getElementById('contact-search-result');
-
-            const groupNameInput = document.getElementById('group-name-input');
-            const contactSelectionList = document.getElementById('contact-selection-list');
-            const createGroupSubmitBtn = document.getElementById('create-group-submit-btn');
-            const groupErrorMsg = document.getElementById('group-error-message');
-
-            const settingsUserIdDisplay = document.getElementById('settings-user-id-display');
-            const displayNameInput = document.getElementById('display-name-input');
-            const saveNameBtn = document.getElementById('save-name-btn');
-            const backButtons = document.querySelectorAll('[id^="cancel-"]');
-
-            const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-            const modalText = document.getElementById('modal-text');
-            const modalCancelBtn = document.getElementById('modal-cancel-btn');
-            const modalConfirmBtn = document.getElementById('modal-confirm-btn');
-
-            // --- In-memory Data Store ---
-            // This data will be reset every time the page is refreshed.
-            let currentUser = {
-                uid: "user-" + Math.random().toString(36).substring(2, 10), // A random, unique ID for the demo
-                displayName: "Guest User"
-            };
-            let conversations = [{ id: "mystic-hero-bot", alias: "MysticHero", type: "contact" }];
-            let activeConversationId = null;
-            let conversationToDelete = null;
-
-            // --- Core Functions ---
-
-            // A simple UUID generator for contacts and groups
-            function generateId() {
-                return Math.random().toString(36).substring(2, 12);
-            }
-
-            // Switches between the different app screens
-            function showScreen(screenId) {
-                Object.values(screens).forEach(screen => {
-                    screen.classList.add('hidden');
-                });
-                screens[screenId].classList.remove('hidden');
-            }
-
-            // Adds a message to the chat window
-            function addMessage(text, isMyMessage) {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('p-4', 'rounded-md', 'border-l-2', 'max-w-full', 'whitespace-pre-wrap');
-                
-                // Apply styling based on who sent the message
-                if (isMyMessage) {
-                    messageElement.classList.add('self-end', 'bg-[#002200]', 'border-green-500');
-                } else {
-                    messageElement.classList.add('self-start', 'bg-[#001100]', 'border-green-500');
+        // Global variables for Firebase services and app state
+        let db;
+        let auth;
+        let userId;
+        let activeConvoId = null;
+        let conversations = [];
+        let unsubscribeMessages = null; // Stores the function to unsubscribe from the messages listener
+    
+        // --- UI Element References ---
+        const loadingScreen = document.getElementById('loading-screen');
+        const appContainer = document.getElementById('app-container');
+        const sidebar = document.getElementById('sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const openSidebarBtn = document.getElementById('open-sidebar-btn');
+        const displayNameEl = document.getElementById('display-name');
+        const userIdEl = document.getElementById('user-id');
+        const addContactBtn = document.getElementById('add-contact-btn');
+        const conversationsList = document.getElementById('conversations-list');
+        const chatScreen = document.getElementById('chat-screen');
+        const addContactScreen = document.getElementById('add-contact-screen');
+        const chatHeaderTitle = document.getElementById('chat-header-title');
+        const messagesList = document.getElementById('messages-list');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const contactIdInput = document.getElementById('contact-id-input');
+        const addContactSubmitBtn = document.getElementById('add-contact-submit-btn');
+        const cancelAddBtn = document.getElementById('cancel-add-btn');
+    
+        // --- Initialization and Authentication ---
+        async function initializeFirebase() {
+            try {
+                // Get Firebase configuration and app ID from the environment
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    
+                if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Firebase configuration is not provided.");
                 }
-
-                // Get display name based on message sender (simulated)
-                const senderName = isMyMessage ? currentUser.displayName : chatHeaderText.textContent;
-                messageElement.textContent = `${senderName}> ${text}`;
-
-                chatWindow.appendChild(messageElement);
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-            }
-
-            // Renders the list of conversations in the sidebar
-            function renderSidebar() {
-                contactListDiv.innerHTML = '<div class="text-xs text-gray-500 mb-2">CONVERSATIONS</div>';
-                currentUserIdDisplay.textContent = `${currentUser.displayName} [${currentUser.uid.substring(0, 8)}...]`;
-
-                conversations.forEach(convo => {
-                    const convoItem = document.createElement('div');
-                    convoItem.classList.add('flex', 'items-center', 'justify-between', 'gap-2');
-                    
-                    const convoButton = document.createElement('button');
-                    convoButton.textContent = convo.type === 'group' ? `GROUP: ${convo.alias}` : convo.alias;
-                    convoButton.classList.add('flex-grow', 'p-2', 'bg-[#002200]', 'border', 'border-green-500', 'rounded-md', 'text-left', 'hover:bg-[#003300]', 'transition-colors');
-                    convoButton.onclick = () => selectConversation(convo.id, convo.alias, convo.type);
-                    
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = 'x';
-                    deleteButton.classList.add('p-1', 'bg-red-500', 'text-black', 'rounded-md', 'hover:bg-red-700', 'transition-colors');
-                    deleteButton.onclick = (e) => {
-                        e.stopPropagation(); // Prevent selecting the conversation
-                        showDeleteModal(convo.id, convo.alias);
-                    };
-
-                    convoItem.appendChild(convoButton);
-                    if (convo.id !== "mystic-hero-bot") { // Prevent deleting the bot
-                        convoItem.appendChild(deleteButton);
+    
+                // Initialize Firebase services
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+    
+                // Wait for authentication state to be ready
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdEl.textContent = `ID: ${userId}`;
+                        // Check for user's display name, set a default if none exists
+                        const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
+                        const userDocSnap = await getDoc(userDocRef);
+                        if (userDocSnap.exists()) {
+                            displayNameEl.textContent = userDocSnap.data().displayName || 'Guest User';
+                        } else {
+                            await setDoc(userDocRef, { displayName: 'Guest User' });
+                            displayNameEl.textContent = 'Guest User';
+                        }
+    
+                        // Start real-time listeners after successful authentication
+                        setupConversationListener(appId, userId);
+                        loadingScreen.style.display = 'none'; // Hide loading screen
+                        appContainer.style.display = 'flex';
+                    } else {
+                        // Sign in anonymously if no authenticated user
+                        try {
+                            if (typeof __initial_auth_token !== 'undefined') {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error('Authentication failed:', error);
+                            loadingScreen.textContent = 'Failed to connect. Please try again.';
+                        }
                     }
-                    contactListDiv.appendChild(convoItem);
                 });
+    
+            } catch (error) {
+                console.error('Failed to initialize Firebase:', error);
+                loadingScreen.textContent = 'Failed to connect to Firebase.';
             }
-
-            // Shows the custom delete confirmation modal
-            function showDeleteModal(id, alias) {
-                conversationToDelete = id;
-                modalText.textContent = `Are you sure you want to delete "${alias}"?`;
-                deleteConfirmModal.classList.remove('hidden');
-            }
-
-            // Deletes a conversation from the list
-            function deleteConversation(id) {
-                conversations = conversations.filter(convo => convo.id !== id);
-                renderSidebar();
-                if (activeConversationId === id) {
-                    activeConversationId = null;
-                    chatHeaderText.textContent = 'No Conversation Selected';
-                    chatWindow.innerHTML = '';
+        }
+    
+        // --- Real-time Data Listeners ---
+        function setupConversationListener(appId, currentUserId) {
+            const q = query(
+                collection(db, 'artifacts', appId, 'public', 'data', 'conversations'),
+                where('participants', 'array-contains', currentUserId)
+            );
+    
+            onSnapshot(q, (snapshot) => {
+                conversations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderConversations();
+                if (conversations.length > 0 && !activeConvoId) {
+                    // Set the first conversation as active by default
+                    setActiveConversation(conversations[0].id);
                 }
-            }
-
-            // Selects a conversation and updates the chat header
-            function selectConversation(id, title, type) {
-                activeConversationId = id;
-                chatHeaderText.textContent = type === 'group' ? `GROUP: ${title}` : title;
-                chatWindow.innerHTML = ''; // Clear chat window for the new conversation
-
-                // Add a welcome message to the bot chat
-                if (id === 'mystic-hero-bot') {
-                    const welcomeMessage = document.createElement('div');
-                    welcomeMessage.textContent = 'You are now talking to MysticHero. They will listen, but they will not speak.';
-                    welcomeMessage.classList.add('text-center', 'text-gray-500', 'italic', 'mb-4');
-                    chatWindow.appendChild(welcomeMessage);
-                }
-
-                // Close sidebar on mobile
-                if (window.innerWidth < 767) {
-                    sidebar.classList.remove('mobile-open', 'flex');
-                    sidebar.classList.add('hidden');
-                }
-            }
-
-            // Handles sending a message
-            function handleSendMessage(e) {
-                e.preventDefault();
-                const messageText = chatUserInput.value.trim();
-                if (!messageText) return;
-
-                addMessage(messageText, true);
-
-                // Special logic for the bot
-                if (activeConversationId === "mystic-hero-bot") {
-                    // MysticHero does not reply
-                }
-
-                chatUserInput.value = '';
-                chatSendBtn.disabled = true;
-            }
-
-            // --- Event Listeners ---
-
-            // Enable/disable the send button based on input content
-            chatUserInput.addEventListener('input', () => {
-                chatSendBtn.disabled = !chatUserInput.value.trim();
             });
-
-            // Handle form submission
-            chatInputForm.addEventListener('submit', handleSendMessage);
-
-            // Add Contact button click
-            addContactBtn.addEventListener('click', () => {
-                contactIdInput.value = '';
-                contactAliasInput.value = '';
-                contactSearchResult.classList.add('hidden');
-                showScreen('addContact');
+        }
+    
+        function setupMessagesListener(appId, conversationId) {
+            // Unsubscribe from any previous message listener
+            if (unsubscribeMessages) {
+                unsubscribeMessages();
+            }
+    
+            if (!conversationId) {
+                messagesList.innerHTML = '<p class="text-gray-500 italic text-center p-4">Select a conversation to start chatting.</p>';
+                return;
+            }
+    
+            const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'conversations', conversationId, 'messages');
+    
+            unsubscribeMessages = onSnapshot(messagesRef, (snapshot) => {
+                const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.timestamp - b.timestamp);
+                renderMessages(messages);
             });
-
-            // Handle Add Contact form submission
-            addContactSubmitBtn.addEventListener('click', () => {
-                const contactId = contactIdInput.value.trim() || generateId();
-                const contactAlias = contactAliasInput.value.trim() || `User ${contactId.substring(0, 8)}`;
-                conversations.push({ id: contactId, alias: contactAlias, type: "contact" });
-                contactSearchResult.textContent = `Contact '${contactAlias}' added!`;
-                contactSearchResult.classList.remove('hidden');
-                renderSidebar();
-                setTimeout(() => showScreen('mainChat'), 2000);
-            });
-
-            // Create Group button click
-            createGroupBtn.addEventListener('click', () => {
-                contactSelectionList.innerHTML = '';
-                const contactsOnly = conversations.filter(c => c.type === 'contact');
-                contactsOnly.forEach(contact => {
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.value = contact.id;
-                    checkbox.id = `contact-${contact.id}`;
-                    checkbox.classList.add('mr-2');
-                    const label = document.createElement('label');
-                    label.textContent = contact.alias;
-                    label.htmlFor = `contact-${contact.id}`;
-                    const div = document.createElement('div');
-                    div.appendChild(checkbox);
-                    div.appendChild(label);
-                    contactSelectionList.appendChild(div);
+        }
+    
+        // --- UI Rendering Functions ---
+        function renderConversations() {
+            conversationsList.innerHTML = '';
+            if (conversations.length === 0) {
+                conversationsList.innerHTML = '<div class="text-gray-500 italic text-center p-4">No conversations yet.</div>';
+                return;
+            }
+            conversations.forEach(convo => {
+                const otherParticipantId = convo.participants.find(id => id !== userId);
+                const contactName = otherParticipantId ? `User: ${otherParticipantId.substring(0, 8)}...` : 'Unknown User';
+                const convoItem = document.createElement('div');
+                convoItem.className = `p-3 rounded-md mb-2 cursor-pointer transition-colors ${activeConvoId === convo.id ? 'bg-green-700' : 'bg-[#002200] hover:bg-[#003300]'}`;
+                convoItem.innerHTML = `
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-4 w-4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        <span class="truncate">${contactName}</span>
+                    </div>
+                `;
+                convoItem.addEventListener('click', () => {
+                    setActiveConversation(convo.id);
+                    if (window.innerWidth < 768) {
+                         sidebar.classList.remove('open');
+                    }
                 });
-                groupNameInput.value = '';
-                groupErrorMsg.classList.add('hidden');
-                showScreen('createGroup');
+                conversationsList.appendChild(convoItem);
             });
-
-            // Handle Create Group form submission
-            createGroupSubmitBtn.addEventListener('click', () => {
-                const groupName = groupNameInput.value.trim();
-                if (!groupName) {
-                    groupErrorMsg.textContent = "Please enter a group name.";
-                    groupErrorMsg.classList.remove('hidden');
-                    return;
+        }
+    
+        function renderMessages(messages) {
+            messagesList.innerHTML = '';
+            messages.forEach(msg => {
+                const isSelf = msg.senderId === userId;
+                const messageEl = document.createElement('div');
+                messageEl.className = `p-4 rounded-md border-l-2 max-w-[80%] break-words message-bubble ${isSelf ? 'self-end self-message border-green-500' : 'self-start friend-message border-green-500'}`;
+                const senderName = isSelf ? 'You' : `Friend:`;
+                messageEl.innerHTML = `
+                    <span class="font-bold block mb-1">${senderName}</span>
+                    <span>${msg.text}</span>
+                `;
+                messagesList.appendChild(messageEl);
+            });
+            // Auto-scroll to the bottom
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+    
+        function setActiveConversation(convoId) {
+            if (convoId === activeConvoId) return;
+            activeConvoId = convoId;
+            const activeConvo = conversations.find(c => c.id === convoId);
+            if (activeConvo) {
+                const otherParticipantId = activeConvo.participants.find(id => id !== userId);
+                chatHeaderTitle.textContent = otherParticipantId ? `Chat with User: ${otherParticipantId.substring(0, 8)}...` : 'Unknown User';
+                setupMessagesListener(typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', activeConvoId);
+            }
+            renderConversations(); // Re-render to update the active state
+        }
+    
+        // --- Event Handlers ---
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (message && activeConvoId) {
+                try {
+                    await addDoc(collection(db, 'artifacts', __app_id, 'public', 'data', 'conversations', activeConvoId, 'messages'), {
+                        senderId: userId,
+                        text: message,
+                        timestamp: serverTimestamp(),
+                    });
+                    messageInput.value = '';
+                } catch (error) {
+                    console.error('Error sending message:', error);
                 }
-                const groupId = generateId();
-                conversations.push({ id: groupId, alias: groupName, type: "group" });
-                renderSidebar();
-                showScreen('mainChat');
-            });
-
-            // Settings button click
-            settingsBtn.addEventListener('click', () => {
-                settingsUserIdDisplay.textContent = currentUser.uid;
-                displayNameInput.value = currentUser.displayName;
-                showScreen('settings');
-            });
-
-            // Save Display Name in Settings
-            saveNameBtn.addEventListener('click', () => {
-                const newDisplayName = displayNameInput.value.trim();
-                if (newDisplayName) {
-                    currentUser.displayName = newDisplayName;
-                    renderSidebar();
-                }
-                showScreen('mainChat');
-            });
-
-            // Universal back buttons
-            backButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    showScreen('mainChat');
-                });
-            });
-
-            // Menu button for mobile sidebar
-            menuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('hidden');
-                sidebar.classList.toggle('flex');
-                sidebar.classList.toggle('mobile-open');
-            });
-
-            // Modal button event listeners
-            modalCancelBtn.addEventListener('click', () => {
-                deleteConfirmModal.classList.add('hidden');
-                conversationToDelete = null;
-            });
-            modalConfirmBtn.addEventListener('click', () => {
-                if (conversationToDelete) {
-                    deleteConversation(conversationToDelete);
-                    deleteConfirmModal.classList.add('hidden');
-                    conversationToDelete = null;
-                }
-            });
-
-            // Initial setup on page load
-            renderSidebar();
-            showScreen('mainChat');
+            }
         });
+    
+        addContactBtn.addEventListener('click', () => {
+            chatScreen.style.display = 'none';
+            addContactScreen.style.display = 'flex';
+        });
+
+        cancelAddBtn.addEventListener('click', () => {
+            addContactScreen.style.display = 'none';
+            chatScreen.style.display = 'flex';
+            contactIdInput.value = '';
+        });
+    
+        addContactSubmitBtn.addEventListener('click', async () => {
+            const contactId = contactIdInput.value.trim();
+            if (!contactId || contactId === userId) {
+                // You could show a message here instead of just logging
+                return;
+            }
+            
+            try {
+                // Check if a conversation already exists
+                const q = query(
+                    collection(db, 'artifacts', __app_id, 'public', 'data', 'conversations'),
+                    where('participants', 'array-contains-any', [userId, contactId])
+                );
+                const existingConvos = await getDocs(q);
+
+                const existingTwoPartyConvo = existingConvos.docs.find(doc => {
+                    const participants = doc.data().participants;
+                    return participants.length === 2 && participants.includes(userId) && participants.includes(contactId);
+                });
+
+                if (existingTwoPartyConvo) {
+                    setActiveConversation(existingTwoPartyConvo.id);
+                } else {
+                    const newConvoRef = await addDoc(collection(db, 'artifacts', __app_id, 'public', 'data', 'conversations'), {
+                        participants: [userId, contactId],
+                        type: 'dm',
+                        createdAt: serverTimestamp(),
+                    });
+                    setActiveConversation(newConvoRef.id);
+                }
+
+                addContactScreen.style.display = 'none';
+                chatScreen.style.display = 'flex';
+                contactIdInput.value = '';
+
+            } catch (error) {
+                console.error('Error adding contact:', error);
+            }
+        });
+
+        openSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.add('open');
+        });
+
+        closeSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+        });
+    
+        // Start the app
+        initializeFirebase();
+    
     </script>
+
 </body>
 </html>
