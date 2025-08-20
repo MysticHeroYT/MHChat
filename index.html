@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* General body styling for a cyberpunk, terminal-like aesthetic */
         body {
             font-family: 'Roboto Mono', monospace;
             background-color: #000000;
@@ -16,12 +17,13 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 1.25rem; /* Responsive padding */
         }
 
+        /* Main chat container styling */
         .chat-container {
             width: 100%;
-            max-width: 800px;
+            max-width: 50rem; /* Increased max-width for better PC experience */
             height: 85vh;
             display: flex;
             flex-direction: column;
@@ -29,8 +31,10 @@
             border: 2px solid #00ff00;
             box-shadow: 0 0 20px #00ff00;
             overflow: hidden;
+            border-radius: 0.5rem; /* Added rounded corners for a modern look */
         }
 
+        /* Chat window styling with scrollable overflow */
         .chat-window {
             flex-grow: 1;
             padding: 2rem;
@@ -41,6 +45,7 @@
             white-space: pre-wrap;
         }
 
+        /* Individual message container styling */
         .chat-message {
             max-width: 90%;
             padding: 1rem 1.5rem;
@@ -49,18 +54,21 @@
             border-left: 2px solid #00ff00;
         }
 
+        /* User-specific message styling */
         .user-message {
             align-self: flex-end;
             background-color: #002200;
             color: #00ff00;
         }
 
+        /* AI-specific message styling */
         .ai-message {
             align-self: flex-start;
             background-color: #001100;
             color: #00ff00;
         }
 
+        /* Input form styling */
         .input-form {
             display: flex;
             flex-direction: column; /* Stack elements vertically */
@@ -69,11 +77,13 @@
             border-top: 2px solid #00ff00;
         }
 
+        /* Row for input elements */
         .input-row {
             display: flex;
             gap: 1rem;
         }
 
+        /* Styling for the select and textarea inputs */
         .input-form select,
         .input-form textarea {
             flex-grow: 1;
@@ -84,18 +94,22 @@
             resize: none;
             outline: none;
             transition: all 0.2s ease-in-out;
+            border-radius: 0.25rem; /* Added rounded corners */
         }
 
+        /* Focus state for inputs */
         .input-form textarea:focus,
         .input-form select:focus {
             box-shadow: 0 0 10px #00ff00;
         }
         
+        /* Styling for dropdown options */
         .input-form option {
             background-color: #000000;
             color: #00ff00;
         }
 
+        /* Styling for the submit button */
         .input-form button {
             background-color: #00ff00;
             color: #000000;
@@ -104,12 +118,15 @@
             cursor: pointer;
             transition: all 0.2s ease-in-out;
             border: none;
+            border-radius: 0.25rem; /* Added rounded corners */
         }
 
+        /* Hover state for the button */
         .input-form button:hover {
             box-shadow: 0 0 15px #00ff00;
         }
 
+        /* Loading indicator styling */
         .loading-dots {
             display: flex;
             justify-content: center;
@@ -134,6 +151,7 @@
             animation-delay: 0.4s;
         }
 
+        /* Keyframes for bounce animation */
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
@@ -143,8 +161,8 @@
         .ai-signature {
             display: block;
             margin-top: 0.5rem;
-            font-size: 0.75rem; /* Smaller font size */
-            color: #008800; /* Muted color */
+            font-size: 0.75rem;
+            color: #008800;
             font-style: italic;
         }
     </style>
