@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MHChat</title>
-    <!-- Tailwind CSS for styling -->
+    <!-- Tailwind CSS voor styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter font from Google Fonts -->
+    <!-- Inter lettertype van Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -14,7 +14,7 @@
             background-color: #000;
             color: #0f0;
         }
-        /* Custom scrollbar for better aesthetics */
+        /* Aangepaste scrollbar voor betere esthetiek */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
         }
@@ -51,15 +51,15 @@
 </head>
 <body class="bg-black text-green-500 font-mono flex items-center justify-center min-h-screen p-5">
 
-    <!-- Main Container -->
+    <!-- Hoofdcontainer -->
     <div id="app-container" class="w-full max-w-5xl h-[90vh] flex flex-col md:flex-row bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-lg overflow-hidden relative">
 
-        <!-- Loading State -->
+        <!-- Laadscherm -->
         <div id="loading-screen" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-20">
-            <p>Connecting to server...</p>
+            <p>Verbinding maken met de server...</p>
         </div>
 
-        <!-- Sidebar (Contacts List) -->
+        <!-- Zijbalk (contactenlijst) -->
         <div id="sidebar" class="sidebar flex flex-col w-full md:w-1/3 p-4 border-r-2 border-green-500 transition-transform duration-300 ease-in-out hidden">
             <div class="flex items-center justify-between pb-4 mb-4 border-b border-green-500">
                 <h1 class="font-bold text-lg">MHChat</h1>
@@ -70,7 +70,7 @@
             
             <div class="flex justify-between items-center mb-4">
                 <p id="user-info" class="text-sm">
-                    <span id="display-name" class="font-bold">Guest User</span>
+                    <span id="display-name" class="font-bold">Gastgebruiker</span>
                     <br/>
                     <span id="user-id" class="text-xs break-all text-gray-400">ID: ...</span>
                 </p>
@@ -78,54 +78,54 @@
 
             <button id="add-contact-btn" class="flex items-center justify-center w-full p-2 mb-4 bg-[#002200] border-2 border-green-500 rounded-md hover:shadow-[0_0_8px_#00ff00] transition-shadow">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-5 w-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="16" x2="16" y1="11" y2="17"></line><line x1="19" x2="13" y1="14" y2="14"></line></svg>
-                Add New Contact
+                Nieuw contact toevoegen
             </button>
 
             <div id="conversations-list" class="flex-grow overflow-y-auto custom-scrollbar">
-                <!-- Conversations will be rendered here -->
+                <!-- Gesprekken worden hier weergegeven -->
             </div>
         </div>
 
-        <!-- Main Content Area -->
+        <!-- Hoofdinhoudsgebied -->
         <div id="main-content" class="flex-grow flex flex-col transition-transform duration-300 ease-in-out">
             
-            <!-- Chat Screen -->
+            <!-- Chatscherm -->
             <div id="chat-screen" class="flex flex-col flex-grow hidden">
-                <!-- Chat Header -->
+                <!-- Chatkoptekst -->
                 <div class="p-4 bg-[#1a1a1a] border-b-2 border-green-500 flex items-center">
                     <button id="open-sidebar-btn" class="md:hidden mr-2 p-1 rounded-md hover:bg-[#002200]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
                     </button>
-                    <h2 id="chat-header-title" class="flex-grow font-bold text-center">Select a Conversation</h2>
+                    <h2 id="chat-header-title" class="flex-grow font-bold text-center">Selecteer een gesprek</h2>
                 </div>
 
-                <!-- Message List -->
+                <!-- Berichtenlijst -->
                 <div id="messages-list" class="flex-grow p-4 overflow-y-auto flex flex-col gap-4 whitespace-pre-wrap custom-scrollbar">
-                    <!-- Messages will be rendered here -->
+                    <!-- Berichten worden hier weergegeven -->
                 </div>
 
-                <!-- Message Input Form -->
+                <!-- Berichteninvoervormulier -->
                 <form id="message-form" class="flex p-4 gap-2 border-t-2 border-green-500">
-                    <input id="message-input" type="text" placeholder=">_ Type your message..." class="flex-grow text-base bg-black placeholder-gray-400 focus:ring-green-500 focus:border-green-500 border border-green-500 resize-none rounded-md p-2 transition-all duration-200">
+                    <input id="message-input" type="text" placeholder=">_ Typ uw bericht..." class="flex-grow text-base bg-black placeholder-gray-400 focus:ring-green-500 focus:border-green-500 border border-green-500 resize-none rounded-md p-2 transition-all duration-200">
                     <button id="send-btn" type="submit" class="bg-green-500 text-black font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_15px_#00ff00]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="m22 2-7 19-4-5-5-4 19-7z"></path><path d="M11 11.2 17 17"></path></svg>
                     </button>
                 </form>
             </div>
 
-            <!-- Add Contact Screen -->
+            <!-- Scherm contact toevoegen -->
             <div id="add-contact-screen" class="hidden flex-grow flex-col justify-center items-center p-8">
                 <div class="w-full max-w-md">
-                    <h2 class="text-2xl font-bold mb-4 text-center">Add New Contact</h2>
-                    <p class="text-sm text-gray-400 mb-2">Enter your friend's full User ID:</p>
-                    <input id="contact-id-input" type="text" placeholder="Paste User ID here..." class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
+                    <h2 class="text-2xl font-bold mb-4 text-center">Nieuw contact toevoegen</h2>
+                    <p class="text-sm text-gray-400 mb-2">Voer de volledige gebruikers-ID van uw vriend in:</p>
+                    <input id="contact-id-input" type="text" placeholder="Plak hier de gebruikers-ID..." class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
                     <div class="flex justify-end gap-2 mt-4">
                         <button id="cancel-add-btn" class="p-2 bg-gray-700 rounded-md transition-colors hover:bg-gray-600">
-                            Cancel
+                            Annuleren
                         </button>
                         <button id="add-contact-submit-btn" class="flex items-center p-2 bg-green-500 text-black font-bold rounded-md hover:shadow-md transition-shadow">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-5 w-5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-                            Add Friend
+                            Vriend toevoegen
                         </button>
                     </div>
                 </div>
@@ -139,7 +139,15 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, addDoc, collection, query, where, onSnapshot, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-        // Global variables for Firebase services and app state
+        // --- BELANGRIJK: PLAK HIER UW FIREBASE-CONFIGURATIE ---
+        // 1. Ga naar uw Firebase-projectconsole.
+        // 2. Ga naar "Projectinstellingen" (het tandwielpictogram naast "Projectoverzicht").
+        // 3. Onder "Uw apps" selecteert u de web-app die u hebt gemaakt.
+        // 4. Klik op "Config" en kopieer het volledige JSON-object.
+        // 5. Vervang de tijdelijke aanduiding `{}` hieronder door uw gekopieerde configuratie.
+        const firebaseConfig = {};
+        
+        // Globale variabelen voor Firebase-services en app-status
         let db;
         let auth;
         let userId;
@@ -147,7 +155,7 @@
         let conversations = [];
         let unsubscribeMessages = null;
     
-        // --- UI Element References ---
+        // --- UI-elementreferenties ---
         const loadingScreen = document.getElementById('loading-screen');
         const appContainer = document.getElementById('app-container');
         const sidebar = document.getElementById('sidebar');
@@ -168,46 +176,48 @@
         const addContactSubmitBtn = document.getElementById('add-contact-submit-btn');
         const cancelAddBtn = document.getElementById('cancel-add-btn');
     
-        // --- Initialization and Authentication ---
+        // --- Initialisatie en authenticatie ---
         async function initializeFirebase() {
             try {
-                // Get Firebase configuration and app ID from the environment
+                // Haal de Firebase-configuratie en app-ID op uit de omgeving
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                
+                // Debugging: Controleer of de configuratie is geplakt
+                console.log("Firebase Config:", firebaseConfig);
     
                 if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
-                    throw new Error("Firebase configuration is not provided.");
+                    throw new Error("Firebase-configuratie is niet opgegeven. Plak deze in de code.");
                 }
     
-                // Initialize Firebase services
+                // Initialiseer Firebase-services
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Sign in the user first
+                // Meld de gebruiker eerst aan
                 if (typeof __initial_auth_token !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
 
-                // Wait for auth state to be confirmed
+                // Wacht tot de authenticatiestatus is bevestigd
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
                         userIdEl.textContent = `ID: ${userId}`;
                         
-                        // Set display name from Firestore or default
+                        // Stel de weergavenaam in vanuit Firestore of de standaardnaam
                         const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
                         const userDocSnap = await getDoc(userDocRef);
                         if (userDocSnap.exists()) {
-                            displayNameEl.textContent = userDocSnap.data().displayName || 'Guest User';
+                            displayNameEl.textContent = userDocSnap.data().displayName || 'Gastgebruiker';
                         } else {
-                            await setDoc(userDocRef, { displayName: 'Guest User' });
-                            displayNameEl.textContent = 'Guest User';
+                            await setDoc(userDocRef, { displayName: 'Gastgebruiker' });
+                            displayNameEl.textContent = 'Gastgebruiker';
                         }
                         
-                        // Show the app UI and start the listeners
+                        // Toon de app-UI en start de listeners
                         loadingScreen.classList.add('hidden');
                         sidebar.classList.remove('hidden');
                         chatScreen.classList.remove('hidden');
@@ -216,12 +226,12 @@
                 });
 
             } catch (error) {
-                console.error('Failed to initialize Firebase:', error);
-                loadingScreen.textContent = 'Failed to connect. Please try again.';
+                console.error('Initialisatie van Firebase mislukt:', error);
+                loadingScreen.textContent = 'Verbinding mislukt. Probeer het opnieuw.';
             }
         }
     
-        // --- Real-time Data Listeners ---
+        // --- Realtime-datalisteners ---
         function setupConversationListener(appId, currentUserId) {
             const q = query(
                 collection(db, 'artifacts', appId, 'public', 'data', 'conversations'),
@@ -243,7 +253,7 @@
             }
     
             if (!conversationId) {
-                messagesList.innerHTML = '<p class="text-gray-500 italic text-center p-4">Select a conversation to start chatting.</p>';
+                messagesList.innerHTML = '<p class="text-gray-500 italic text-center p-4">Selecteer een gesprek om te beginnen met chatten.</p>';
                 return;
             }
     
@@ -255,16 +265,16 @@
             });
         }
     
-        // --- UI Rendering Functions ---
+        // --- UI-weergavefuncties ---
         function renderConversations() {
             conversationsList.innerHTML = '';
             if (conversations.length === 0) {
-                conversationsList.innerHTML = '<div class="text-gray-500 italic text-center p-4">No conversations yet.</div>';
+                conversationsList.innerHTML = '<div class="text-gray-500 italic text-center p-4">Nog geen gesprekken.</div>';
                 return;
             }
             conversations.forEach(convo => {
                 const otherParticipantId = convo.participants.find(id => id !== userId);
-                const contactName = otherParticipantId ? `User: ${otherParticipantId.substring(0, 8)}...` : 'Unknown User';
+                const contactName = otherParticipantId ? `Gebruiker: ${otherParticipantId.substring(0, 8)}...` : 'Onbekende gebruiker';
                 const convoItem = document.createElement('div');
                 convoItem.className = `p-3 rounded-md mb-2 cursor-pointer transition-colors ${activeConvoId === convo.id ? 'bg-green-700' : 'bg-[#002200] hover:bg-[#003300]'}`;
                 convoItem.innerHTML = `
@@ -289,7 +299,7 @@
                 const isSelf = msg.senderId === userId;
                 const messageEl = document.createElement('div');
                 messageEl.className = `p-4 rounded-md border-l-2 max-w-[80%] break-words message-bubble ${isSelf ? 'self-end self-message border-green-500' : 'self-start friend-message border-green-500'}`;
-                const senderName = isSelf ? 'You' : `Friend:`;
+                const senderName = isSelf ? 'U' : `Vriend:`;
                 messageEl.innerHTML = `
                     <span class="font-bold block mb-1">${senderName}</span>
                     <span>${msg.text}</span>
@@ -305,13 +315,13 @@
             const activeConvo = conversations.find(c => c.id === convoId);
             if (activeConvo) {
                 const otherParticipantId = activeConvo.participants.find(id => id !== userId);
-                chatHeaderTitle.textContent = otherParticipantId ? `Chat with User: ${otherParticipantId.substring(0, 8)}...` : 'Unknown User';
+                chatHeaderTitle.textContent = otherParticipantId ? `Chat met gebruiker: ${otherParticipantId.substring(0, 8)}...` : 'Onbekende gebruiker';
                 setupMessagesListener(typeof __app_id !== 'undefined' ? __app_id : 'default-app-id', activeConvoId);
             }
             renderConversations();
         }
     
-        // --- Event Handlers ---
+        // --- Gebeurtenishandlers ---
         messageForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const message = messageInput.value.trim();
@@ -324,7 +334,7 @@
                     });
                     messageInput.value = '';
                 } catch (error) {
-                    console.error('Error sending message:', error);
+                    console.error('Fout bij het verzenden van bericht:', error);
                 }
             }
         });
@@ -374,7 +384,7 @@
                 contactIdInput.value = '';
 
             } catch (error) {
-                console.error('Error adding contact:', error);
+                console.error('Fout bij het toevoegen van contact:', error);
             }
         });
 
@@ -386,7 +396,7 @@
             sidebar.classList.remove('open');
         });
     
-        // Start the app
+        // Start de app
         initializeFirebase();
     
     </script>
