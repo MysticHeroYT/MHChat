@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MHChat</title>
-    <!-- Tailwind CSS CDN -->
+    <title>MHChat (Static Demo)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom Styles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* This is a simple, custom stylesheet for the app */
         body {
             font-family: 'Roboto Mono', monospace;
             background-color: #000000;
@@ -20,6 +22,8 @@
             padding: 1.25rem;
             overflow: hidden;
         }
+
+        /* Custom animation for the blinking cursor effect */
         @keyframes blink {
             50% { opacity: 0; }
         }
@@ -27,9 +31,7 @@
             content: '_';
             animation: blink 1s step-end infinite;
         }
-        .chat-message-ai {
-            color: #00ff00;
-        }
+
         /* Custom scrollbar for a themed look */
         ::-webkit-scrollbar {
             width: 8px;
@@ -44,8 +46,8 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #00cc00;
         }
-        
-        /* Custom styling for responsive sidebar */
+
+        /* Responsive sidebar for mobile view */
         #sidebar.mobile-open {
             display: flex;
             transform: translateX(0);
@@ -67,21 +69,12 @@
         }
     </style>
 </head>
-<body>
-    <!-- Cookie Consent Banner -->
-    <div id="cookie-banner" class="fixed bottom-0 left-0 w-full bg-[#0a0a0a] border-t-2 border-green-500 shadow-[0_0_10px_#00ff00] p-4 text-sm z-50 transition-transform duration-300 transform translate-y-full">
-        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <p class="text-white text-center md:text-left">
-                This website uses cookies to improve the user experience. By continuing, you agree to our cookie policy.
-            </p>
-            <button id="accept-cookies-btn" class="bg-green-500 text-black font-bold py-2 px-6 rounded-md hover:shadow-[0_0_8px_#00ff00] transition-shadow">
-                Accept
-            </button>
-        </div>
-    </div>
+<body class="bg-black text-green-500 font-mono">
+
+    <!-- IMPORTANT: This is a static demo. All data is stored in memory and will be lost on page refresh. -->
 
     <!-- Main Application Container that manages screen views -->
-    <div id="app-container" class="flex justify-center items-center min-h-screen p-5 bg-black text-green-500 font-mono">
+    <div id="app-container" class="flex justify-center items-center min-h-screen p-5">
         
         <!-- Main Chat Screen -->
         <div id="main-chat-screen" class="screen w-full max-w-5xl h-[85vh] flex flex-col md:flex-row bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md overflow-hidden">
@@ -89,7 +82,7 @@
             <!-- Sidebar for contacts and groups -->
             <div id="sidebar" class="w-full md:w-1/3 hidden md:flex flex-col p-4 overflow-y-auto">
                 <div class="text-center font-bold text-lg mb-4">
-                    MHChat 
+                    MHChat
                     <span id="current-user-id-display" class="font-normal text-xs text-gray-400 block break-all mt-1"></span>
                 </div>
                 
@@ -101,7 +94,7 @@
 
                 <div id="contact-list" class="flex-grow flex flex-col gap-2">
                     <div class="text-xs text-gray-500">CONVERSATIONS</div>
-                    <!-- Conversation items will be added here -->
+                    <!-- Conversation items will be added here dynamically -->
                 </div>
             </div>
 
@@ -117,23 +110,10 @@
                 </div>
 
                 <div id="chat-window" class="flex-grow p-8 overflow-y-auto flex flex-col gap-4 whitespace-pre-wrap">
-                    <!-- Messages will be added here -->
-                </div>
-
-                <!-- Image preview container -->
-                <div id="image-preview-container" class="hidden relative p-4 border-t-2 border-green-500 bg-[#0a0a0a]">
-                    <img id="image-preview" src="" alt="Image preview" class="max-h-32 rounded-md">
-                    <button id="clear-image-btn" class="absolute top-2 right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center font-bold hover:bg-red-700">&times;</button>
+                    <!-- Messages will be added here dynamically -->
                 </div>
 
                 <form id="chat-input-form" class="flex p-4 gap-2 border-t-2 border-green-500">
-                    <label for="image-upload" class="bg-green-500 text-black font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-200 hover:shadow-[0_0_15px_#00ff00] flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                        </svg>
-                    </label>
-                    <input type="file" id="image-upload" class="hidden" accept="image/*">
-                    
                     <textarea
                         id="chat-user-input"
                         rows="1"
@@ -197,37 +177,13 @@
                 </div>
             </div>
         </div>
-
-        <!-- Modals that stay as pop-ups because they are in-context actions -->
-        <div id="edit-contact-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-[100]">
-            <div class="bg-[#0a0a0a] p-8 rounded-md border-2 border-green-500 shadow-[0_0_20px_#00ff00]">
-                <h2 class="text-xl font-bold mb-4">Edit Contact</h2>
-                <p class="text-sm text-gray-400 mb-2">ID: <span id="edit-contact-id-display" class="font-bold break-all"></span></p>
-                <p class="text-sm text-gray-400 mb-2">Edit nickname:</p>
-                <input type="text" id="edit-contact-alias-input" placeholder="New nickname" class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
-                <div class="flex justify-end gap-2">
-                    <button id="cancel-edit-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
-                    <button id="save-edit-btn" class="p-2 bg-green-500 text-black font-bold rounded-md">Save</button>
-                </div>
-            </div>
-        </div>
     </div>
+    
+    <script>
+        // --- IMPORTANT: Static JavaScript Logic ---
+        // This is a front-end demo. All data is stored in memory and will be lost on page refresh.
 
-
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, where, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- Core Application Logic ---
-
-        // Firebase environment variables provided by the Canvas environment.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // UI elements
+        // --- UI Elements ---
         const screens = {
             mainChat: document.getElementById('main-chat-screen'),
             addContact: document.getElementById('add-contact-screen'),
@@ -236,8 +192,7 @@
         };
         const currentUserIdDisplay = document.getElementById('current-user-id-display');
         const chatWindow = document.getElementById('chat-window');
-        const chatHeader = document.getElementById('chat-header');
-        const chatHeaderText = document.getElementById('chat-header-text'); // New span for header text
+        const chatHeaderText = document.getElementById('chat-header-text');
         const chatUserInput = document.getElementById('chat-user-input');
         const chatInputForm = document.getElementById('chat-input-form');
         const chatSendBtn = document.getElementById('chat-send-btn');
@@ -247,8 +202,6 @@
         const settingsBtn = document.getElementById('settings-btn');
         const menuBtn = document.getElementById('menu-btn');
         const sidebar = document.getElementById('sidebar');
-        const cookieBanner = document.getElementById('cookie-banner');
-        const acceptCookiesBtn = document.getElementById('accept-cookies-btn');
 
         const contactIdInput = document.getElementById('contact-id-input');
         const contactAliasInput = document.getElementById('contact-alias-input');
@@ -263,33 +216,25 @@
         const settingsUserIdDisplay = document.getElementById('settings-user-id-display');
         const displayNameInput = document.getElementById('display-name-input');
         const saveNameBtn = document.getElementById('save-name-btn');
-
-        const editContactModal = document.getElementById('edit-contact-modal');
-        const editContactIdDisplay = document.getElementById('edit-contact-id-display');
-        const editContactAliasInput = document.getElementById('edit-contact-alias-input');
-        const saveEditBtn = document.getElementById('save-edit-btn');
-        const cancelEditBtn = document.getElementById('cancel-edit-btn');
-
-        const imageUploadInput = document.getElementById('image-upload');
-        const imagePreviewContainer = document.getElementById('image-preview-container');
-        const imagePreview = document.getElementById('image-preview');
-        const clearImageBtn = document.getElementById('clear-image-btn');
-
-        // Back buttons
         const backButtons = document.querySelectorAll('[id^="cancel-"]');
 
-        // Firebase instances
-        let app, db, auth;
-        let currentUser = null;
-        let myDisplayName = '';
+        // --- In-memory Data Store ---
+        // This data will be reset every time the page is refreshed.
+        let currentUser = {
+            uid: "user-" + Math.random().toString(36).substring(2, 10), // A random, unique ID for the demo
+            displayName: "Guest User"
+        };
+        let conversations = [{ id: "mystic-hero-bot", alias: "MysticHero", type: "contact" }]; // Bot is a conversation
         let activeConversationId = null;
-        let myContacts = {};
-        let myGroups = {};
-        let myAliases = {};
-        let chatUnsubscribe = null;
-        let selectedImage = null; // Store the Base64 image string
 
-        // Function to switch between screens
+        // --- Core Functions ---
+
+        // A simple UUID generator for contacts and groups
+        function generateId() {
+            return Math.random().toString(36).substring(2, 12);
+        }
+
+        // Switches between the different app screens
         function showScreen(screenId) {
             Object.values(screens).forEach(screen => {
                 screen.classList.add('hidden');
@@ -297,422 +242,209 @@
             screens[screenId].classList.remove('hidden');
         }
 
-        // Function to add a new message to the chat window
-        function addMessage(messageText, senderId, imageContent, isSystem = false) {
+        // Adds a message to the chat window
+        function addMessage(text, isMyMessage) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('p-4', 'rounded-md', 'border-l-2', 'max-w-full', 'whitespace-pre-wrap');
-            messageElement.classList.add(senderId === currentUser?.uid ? 'self-end' : 'self-start');
-            messageElement.classList.add(isSystem ? 'bg-[#1a1a1a]' : (senderId === currentUser?.uid ? 'bg-[#002200]' : 'bg-[#001100]'));
-            messageElement.classList.add('border-green-500');
-
-            if (imageContent) {
-                const imgElement = document.createElement('img');
-                imgElement.src = imageContent;
-                imgElement.alt = "Sent image";
-                imgElement.classList.add('rounded-md', 'max-w-full', 'h-auto', 'mb-2');
-                messageElement.appendChild(imgElement);
+            
+            // Apply styling based on who sent the message
+            if (isMyMessage) {
+                messageElement.classList.add('self-end', 'bg-[#002200]', 'border-green-500');
+            } else {
+                messageElement.classList.add('self-start', 'bg-[#001100]', 'border-green-500');
             }
-            
-            // Get the display name from the alias map, or use the ID as fallback
-            const displayName = senderId === currentUser?.uid ? myDisplayName : (myAliases[senderId] || senderId.substring(0, 8) + '...');
-            const textNode = document.createTextNode(`${displayName}> ${messageText}`);
-            messageElement.appendChild(textNode);
-            
+
+            // Get display name based on message sender (simulated)
+            const senderName = isMyMessage ? currentUser.displayName : chatHeaderText.textContent;
+            messageElement.textContent = `${senderName}> ${text}`;
+
             chatWindow.appendChild(messageElement);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        // Function to select a conversation and load messages
-        async function selectConversation(conversationId, title) {
-            if (chatUnsubscribe) {
-                chatUnsubscribe(); // Unsubscribe from the previous chat
-            }
+        // Renders the list of contacts and groups in the sidebar
+        function renderSidebar() {
+            contactListDiv.innerHTML = '<div class="text-xs text-gray-500 mb-2">CONVERSATIONS</div>';
+            currentUserIdDisplay.textContent = `${currentUser.displayName} [${currentUser.uid.substring(0, 8)}...]`;
 
-            activeConversationId = conversationId;
-            chatHeaderText.textContent = title;
-            chatWindow.innerHTML = ''; // Clear the chat window
+            // Render conversations with delete button
+            conversations.forEach(convo => {
+                const convoItem = document.createElement('div');
+                convoItem.classList.add('flex', 'items-center', 'justify-between', 'gap-2');
+                
+                const convoButton = document.createElement('button');
+                convoButton.textContent = convo.type === 'group' ? `GROUP: ${convo.alias}` : convo.alias;
+                convoButton.classList.add('flex-grow', 'p-2', 'bg-[#002200]', 'border', 'border-green-500', 'rounded-md', 'text-left', 'hover:bg-[#003300]', 'transition-colors');
+                convoButton.onclick = () => selectConversation(convo.id, convo.alias, convo.type);
+                
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'x';
+                deleteButton.classList.add('p-1', 'bg-red-500', 'text-black', 'rounded-md', 'hover:bg-red-700', 'transition-colors');
+                deleteButton.onclick = (e) => {
+                    e.stopPropagation(); // Prevent selecting the conversation
+                    deleteConversation(convo.id);
+                };
 
-            // Close sidebar on mobile after selecting a conversation
-            if (window.innerWidth < 768) {
-                sidebar.classList.remove('mobile-open');
-                sidebar.classList.add('hidden');
-            }
-
-            const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'conversations', conversationId, 'messages');
-            const q = query(messagesRef, orderBy('timestamp'));
-
-            chatUnsubscribe = onSnapshot(q, async (snapshot) => {
-                snapshot.docChanges().forEach(async (change) => {
-                    if (change.type === "added") {
-                        const data = change.doc.data();
-                        addMessage(data.messageText || '', data.senderId, data.imageContent);
-                    }
-                });
+                convoItem.appendChild(convoButton);
+                if (convo.id !== "mystic-hero-bot") { // Prevent deleting the bot
+                    convoItem.appendChild(deleteButton);
+                }
+                contactListDiv.appendChild(convoItem);
             });
         }
 
-        // Sanitize user input to prevent XSS attacks
-        function sanitizeMessage(message) {
-            let sanitized = message.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, "");
-            sanitized = sanitized.replace(/on\w+="[^"]*"/gim, "");
-            return sanitized;
+        // Deletes a conversation from the list
+        function deleteConversation(id) {
+            conversations = conversations.filter(convo => convo.id !== id);
+            renderSidebar();
+            if (activeConversationId === id) {
+                activeConversationId = null;
+                chatHeaderText.textContent = 'No Conversation Selected';
+                chatWindow.innerHTML = '';
+            }
+        }
+
+        // Selects a conversation and updates the chat header
+        function selectConversation(id, title, type) {
+            activeConversationId = id;
+            chatHeaderText.textContent = type === 'group' ? `GROUP: ${title}` : title;
+            chatWindow.innerHTML = ''; // Clear chat window for the new conversation
+
+            // Add a welcome message to the bot chat
+            if (id === 'mystic-hero-bot') {
+                const welcomeMessage = document.createElement('div');
+                welcomeMessage.textContent = 'You are now talking to MysticHero. They will listen, but they will not speak.';
+                welcomeMessage.classList.add('text-center', 'text-gray-500', 'italic', 'mb-4');
+                chatWindow.appendChild(welcomeMessage);
+            }
+
+            // Close sidebar on mobile
+            if (window.innerWidth < 768) {
+                sidebar.classList.remove('mobile-open', 'flex');
+                sidebar.classList.add('hidden');
+            }
         }
 
         // Handles sending a message
-        async function handleSendMessage(e) {
+        function handleSendMessage(e) {
             e.preventDefault();
             const messageText = chatUserInput.value.trim();
-            
-            if ((!messageText && !selectedImage) || !activeConversationId) {
+            if (!messageText) return;
+
+            addMessage(messageText, true);
+
+            // Special logic for the bot
+            if (activeConversationId === "mystic-hero-bot") {
+                // MysticHero does not reply
+            }
+
+            chatUserInput.value = '';
+            chatSendBtn.disabled = true;
+        }
+
+        // --- Event Listeners ---
+
+        // Enable/disable the send button based on input content
+        chatUserInput.addEventListener('input', () => {
+            chatSendBtn.disabled = !chatUserInput.value.trim();
+        });
+
+        // Handle form submission
+        chatInputForm.addEventListener('submit', handleSendMessage);
+
+        // Add Contact button click
+        addContactBtn.addEventListener('click', () => {
+            contactIdInput.value = '';
+            contactAliasInput.value = '';
+            contactSearchResult.classList.add('hidden');
+            showScreen('addContact');
+        });
+
+        // Handle Add Contact form submission
+        addContactSubmitBtn.addEventListener('click', () => {
+            const contactId = contactIdInput.value.trim() || generateId();
+            const contactAlias = contactAliasInput.value.trim() || `User ${contactId.substring(0, 8)}`;
+            conversations.push({ id: contactId, alias: contactAlias, type: "contact" });
+            contactSearchResult.textContent = `Contact '${contactAlias}' added!`;
+            contactSearchResult.classList.remove('hidden');
+            renderSidebar();
+            setTimeout(() => showScreen('mainChat'), 2000);
+        });
+
+        // Create Group button click
+        createGroupBtn.addEventListener('click', () => {
+            contactSelectionList.innerHTML = '';
+            const contactsOnly = conversations.filter(c => c.type === 'contact');
+            contactsOnly.forEach(contact => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = contact.id;
+                checkbox.id = `contact-${contact.id}`;
+                checkbox.classList.add('mr-2');
+                const label = document.createElement('label');
+                label.textContent = contact.alias;
+                label.htmlFor = `contact-${contact.id}`;
+                const div = document.createElement('div');
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                contactSelectionList.appendChild(div);
+            });
+            groupNameInput.value = '';
+            groupErrorMsg.classList.add('hidden');
+            showScreen('createGroup');
+        });
+
+        // Handle Create Group form submission
+        createGroupSubmitBtn.addEventListener('click', () => {
+            const groupName = groupNameInput.value.trim();
+            if (!groupName) {
+                groupErrorMsg.textContent = "Please enter a group name.";
+                groupErrorMsg.classList.remove('hidden');
                 return;
             }
+            const groupId = generateId();
+            conversations.push({ id: groupId, alias: groupName, type: "group" });
+            renderSidebar();
+            showScreen('mainChat');
+        });
 
-            const sanitizedMessage = sanitizeMessage(messageText);
+        // Settings button click
+        settingsBtn.addEventListener('click', () => {
+            settingsUserIdDisplay.textContent = currentUser.uid;
+            displayNameInput.value = currentUser.displayName;
+            showScreen('settings');
+        });
 
-            try {
-                const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'conversations', activeConversationId, 'messages');
-                const messageData = {
-                    senderId: currentUser.uid,
-                    timestamp: serverTimestamp()
-                };
-
-                if (sanitizedMessage) {
-                    messageData.messageText = sanitizedMessage;
-                }
-                if (selectedImage) {
-                    messageData.imageContent = selectedImage;
-                }
-                
-                await addDoc(messagesRef, messageData);
-                
-                chatUserInput.value = '';
-                clearImagePreview();
-            } catch (error) {
-                console.error("Error sending message:", error);
-                addMessage("Failed to send message.", "SYSTEM", null, true);
+        // Save Display Name in Settings
+        saveNameBtn.addEventListener('click', () => {
+            const newDisplayName = displayNameInput.value.trim();
+            if (newDisplayName) {
+                currentUser.displayName = newDisplayName;
+                renderSidebar();
             }
-        }
-        
-        function handleImageUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (!file.type.startsWith('image/')) {
-                console.error("Invalid file type. Please select an image.");
-                clearImagePreview();
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = () => {
-                selectedImage = reader.result;
-                imagePreview.src = selectedImage;
-                imagePreviewContainer.classList.remove('hidden');
-                chatSendBtn.disabled = false;
-            };
-            reader.readAsDataURL(file);
-        }
+            showScreen('mainChat');
+        });
 
-        function clearImagePreview() {
-            selectedImage = null;
-            imageUploadInput.value = '';
-            imagePreview.src = '';
-            imagePreviewContainer.classList.add('hidden');
-            if (chatUserInput.value.trim() === '') {
-                chatSendBtn.disabled = true;
-            }
-        }
-        
-        // Populates the sidebar with contacts and groups
-        function renderSidebar() {
-            contactListDiv.innerHTML = '<div class="text-xs text-gray-500 mb-2">CONVERSATIONS</div>';
-            currentUserIdDisplay.textContent = `${myDisplayName} [${currentUser.uid.substring(0, 8)}...]`;
-
-            Object.keys(myContacts).forEach(contactUid => {
-                const contactAlias = myAliases[contactUid] || contactUid.substring(0, 8) + '...';
-                const conversationId = [currentUser.uid, contactUid].sort().join('_');
-
-                const contactItem = document.createElement('div');
-                contactItem.classList.add('flex', 'justify-between', 'items-center', 'gap-2', 'p-2', 'bg-[#002200]', 'border', 'border-green-500', 'rounded-md', 'text-left', 'hover:bg-[#003300]', 'transition-colors');
-
-                const contactButton = document.createElement('button');
-                contactButton.textContent = contactAlias;
-                contactButton.classList.add('flex-grow', 'text-left');
-                contactButton.onclick = () => selectConversation(conversationId, contactAlias);
-                contactItem.appendChild(contactButton);
-
-                const editButton = document.createElement('button');
-                editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500 hover:text-green-300" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                        </svg>`;
-                editButton.title = "Edit nickname";
-                editButton.onclick = (e) => {
-                    e.stopPropagation();
-                    editContact(contactUid);
-                };
-                contactItem.appendChild(editButton);
-
-                contactListDiv.appendChild(contactItem);
-            });
-
-            Object.keys(myGroups).forEach(groupId => {
-                const groupName = myGroups[groupId];
-                const groupItem = document.createElement('button');
-                groupItem.textContent = `GROUP: ${groupName}`;
-                groupItem.classList.add('p-2', 'bg-[#002200]', 'border', 'border-green-500', 'rounded-md', 'text-left', 'hover:bg-[#003300]', 'transition-colors');
-                groupItem.onclick = () => selectConversation(groupId, `GROUP: ${groupName}`);
-                contactListDiv.appendChild(groupItem);
-            });
-        }
-        
-        function editContact(contactId) {
-            editContactModal.classList.remove('hidden');
-            editContactIdDisplay.textContent = contactId;
-            editContactAliasInput.value = myAliases[contactId] || '';
-            
-            // Remove previous event listener to prevent duplicates
-            saveEditBtn.onclick = null;
-            saveEditBtn.onclick = async () => {
-                const newAlias = editContactAliasInput.value.trim();
-                const contactToUpdate = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                
-                try {
-                    await updateDoc(contactToUpdate, {
-                        [`contactAliases.${contactId}`]: newAlias
-                    });
-                    editContactModal.classList.add('hidden');
-                } catch (error) {
-                    console.error("Error saving nickname:", error);
-                }
-            };
-        }
-
-        function handleCookieConsent() {
-            const hasAcceptedCookies = localStorage.getItem('accepted-cookies');
-            if (!hasAcceptedCookies) {
-                cookieBanner.classList.remove('translate-y-full');
-            }
-            
-            acceptCookiesBtn.addEventListener('click', () => {
-                localStorage.setItem('accepted-cookies', 'true');
-                cookieBanner.classList.add('translate-y-full');
-            });
-        }
-        
-        async function initApp() {
-            try {
+        // Universal back buttons
+        backButtons.forEach(button => {
+            button.addEventListener('click', () => {
                 showScreen('mainChat');
+            });
+        });
 
-                if (Object.keys(firebaseConfig).length === 0) {
-                    throw new Error("Firebase configuration not available.");
-                }
-                
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+        // Menu button for mobile sidebar
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('flex');
+            sidebar.classList.toggle('mobile-open');
+        });
 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        currentUser = user;
-                        
-                        const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                        const userDoc = await getDoc(userDocRef);
-                        
-                        // Create user profile if it doesn't exist.
-                        if (!userDoc.exists()) {
-                            await setDoc(userDocRef, {
-                                contacts: ['localhost-contact-id'],
-                                contactAliases: {'localhost-contact-id': 'MysticHero'},
-                                myDisplayName: currentUser.uid.substring(0, 8),
-                                createdAt: serverTimestamp()
-                            });
-                        }
-                        
-                        // Ensure localhost user exists (public)
-                        const localhostContactId = 'localhost-contact-id';
-                        const localhostDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', localhostContactId);
-                        const localhostDoc = await getDoc(localhostDocRef);
-                        if (!localhostDoc.exists()) {
-                            await setDoc(localhostDocRef, {
-                                username: 'localhost',
-                                createdAt: serverTimestamp()
-                            });
-                        }
-
-                        // Listen for contacts, aliases and display name updates
-                        onSnapshot(userDocRef, async (updatedDoc) => {
-                            if (updatedDoc.exists()) {
-                                const updatedData = updatedDoc.data();
-                                myContacts = {};
-                                for (const contactUid of updatedData.contacts || []) {
-                                    myContacts[contactUid] = contactUid; // Use ID as placeholder
-                                }
-                                myAliases = updatedData.contactAliases || {};
-                                myDisplayName = updatedData.myDisplayName || currentUser.uid.substring(0, 8);
-                                renderSidebar();
-                            }
-                        });
-
-                        // Listen for group updates
-                        onSnapshot(query(collection(db, `artifacts/${appId}/public/data/conversations`), where('members', 'array-contains', currentUser.uid)), (snapshot) => {
-                            myGroups = {};
-                            snapshot.forEach(doc => {
-                                myGroups[doc.id] = doc.data().name;
-                            });
-                            renderSidebar();
-                        });
-                        
-                        chatSendBtn.disabled = false;
-                    }
-                });
-
-                // Add event listeners
-                chatInputForm.addEventListener('submit', handleSendMessage);
-                chatUserInput.addEventListener('input', () => {
-                    chatSendBtn.disabled = !chatUserInput.value.trim() && !selectedImage;
-                });
-                
-                imageUploadInput.addEventListener('change', handleImageUpload);
-                clearImageBtn.addEventListener('click', clearImagePreview);
-
-                addContactBtn.addEventListener('click', () => {
-                    contactIdInput.value = '';
-                    contactAliasInput.value = '';
-                    contactSearchResult.classList.add('hidden');
-                    showScreen('addContact');
-                });
-                
-                addContactSubmitBtn.addEventListener('click', async () => {
-                    const contactUid = contactIdInput.value.trim();
-                    const alias = contactAliasInput.value.trim() || contactUid.substring(0, 8) + '...';
-
-                    if (!contactUid || contactUid === currentUser.uid) {
-                        contactSearchResult.textContent = 'Invalid user ID or it is your own ID.';
-                        contactSearchResult.classList.remove('hidden');
-                        return;
-                    }
-
-                    const myUserDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                    const myUserData = (await getDoc(myUserDocRef)).data();
-                    const currentContacts = myUserData.contacts || [];
-
-                    if (currentContacts.includes(contactUid)) {
-                        contactSearchResult.textContent = 'This user is already in your contacts.';
-                        contactSearchResult.classList.remove('hidden');
-                        return;
-                    }
-                    
-                    await updateDoc(myUserDocRef, {
-                        contacts: [...currentContacts, contactUid],
-                        [`contactAliases.${contactUid}`]: alias
-                    });
-                    
-                    contactSearchResult.textContent = `User with ID '${contactUid}' added as '${alias}'!`;
-                    contactSearchResult.classList.remove('hidden');
-                });
-
-                createGroupBtn.addEventListener('click', async () => {
-                    contactSelectionList.innerHTML = '';
-                    
-                    const myUserDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid));
-                    const myContactUids = myUserDoc.exists() ? myUserDoc.data().contacts || [] : [];
-                    
-                    myContactUids.forEach(contactUid => {
-                        const contactAlias = myAliases[contactUid] || contactUid.substring(0, 8) + '...';
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.id = `contact-${contactUid}`;
-                        checkbox.value = contactUid;
-                        checkbox.classList.add('mr-2');
-                        const label = document.createElement('label');
-                        label.htmlFor = `contact-${contactUid}`;
-                        label.textContent = contactAlias;
-                        const div = document.createElement('div');
-                        div.appendChild(checkbox);
-                        div.appendChild(label);
-                        contactSelectionList.appendChild(div);
-                    });
-
-                    groupNameInput.value = '';
-                    groupErrorMsg.classList.add('hidden');
-                    showScreen('createGroup');
-                });
-                
-                createGroupSubmitBtn.addEventListener('click', async () => {
-                    const groupName = groupNameInput.value.trim();
-                    const members = [currentUser.uid];
-                    const checkboxes = contactSelectionList.querySelectorAll('input[type="checkbox"]:checked');
-                    checkboxes.forEach(checkbox => members.push(checkbox.value));
-                    
-                    if (groupName.length === 0 || members.length < 2) {
-                        groupErrorMsg.textContent = "Please enter a group name and select at least one contact.";
-                        groupErrorMsg.classList.remove('hidden');
-                        return;
-                    }
-                    
-                    try {
-                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'conversations'), {
-                            type: 'group',
-                            name: groupName,
-                            members: members,
-                            createdAt: serverTimestamp()
-                        });
-                        
-                        addMessage(`Group '${groupName}' created!`, "SYSTEM", null, true);
-                        showScreen('mainChat');
-                    } catch (error) {
-                        console.error("Error creating group:", error);
-                        addMessage("Failed to create group.", "SYSTEM", null, true);
-                    }
-                });
-                
-                settingsBtn.addEventListener('click', () => {
-                    settingsUserIdDisplay.textContent = currentUser.uid;
-                    displayNameInput.value = myDisplayName;
-                    showScreen('settings');
-                });
-                
-                saveNameBtn.addEventListener('click', async () => {
-                    const newDisplayName = displayNameInput.value.trim();
-                    if (newDisplayName) {
-                        try {
-                            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                            await updateDoc(userDocRef, { myDisplayName: newDisplayName });
-                            showScreen('mainChat');
-                        } catch (error) {
-                            console.error("Error saving display name:", error);
-                        }
-                    }
-                });
-
-                // Universal back buttons
-                backButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        showScreen('mainChat');
-                    });
-                });
-                
-                // Add event listener for the new menu button
-                menuBtn.addEventListener('click', () => {
-                    sidebar.classList.toggle('hidden');
-                    sidebar.classList.toggle('flex');
-                    sidebar.classList.toggle('mobile-open');
-                });
-                
-            } catch (error) {
-                console.error("Initialization failed:", error);
-            }
-        }
-        
+        // Initial setup on page load
         window.onload = () => {
-            initApp();
-            handleCookieConsent();
+            renderSidebar();
+            showScreen('mainChat');
         };
+
     </script>
 </body>
 </html>
