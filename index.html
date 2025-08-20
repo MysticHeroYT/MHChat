@@ -84,7 +84,6 @@
         }
 
         /* Styling for the select and textarea inputs */
-        .input-form select,
         .input-form textarea,
         .input-form input {
             flex-grow: 1;
@@ -100,17 +99,10 @@
 
         /* Focus state for inputs */
         .input-form textarea:focus,
-        .input-form select:focus,
         .input-form input:focus {
             box-shadow: 0 0 10px #00ff00;
         }
         
-        /* Styling for dropdown options */
-        .input-form option {
-            background-color: #000000;
-            color: #00ff00;
-        }
-
         /* Styling for the submit button */
         .input-form button {
             background-color: #00ff00;
@@ -190,13 +182,6 @@
         <!-- Input form for user messages -->
         <form id="chatForm" class="input-form" onsubmit="event.preventDefault(); sendMessage();">
             <div class="input-row">
-                <select id="modelSelect" class="bg-black text-green-400 p-2 border border-green-400 rounded-sm">
-                    <option value="gemini-2.5-flash-preview-05-20">MysticAI-2.5-flash (Fast)</option>
-                    <option value="gemini-1.5-flash-latest">MysticAI-1.5-flash (Latest)</option>
-                    <option value="gemini-1.5-pro-latest">MysticAI-1.5-pro (Powerful)</option>
-                </select>
-            </div>
-            <div class="input-row">
                 <textarea
                     id="userInput"
                     rows="1"
@@ -215,12 +200,14 @@
         const userInput = document.getElementById('userInput');
         const loadingIndicator = document.getElementById('loading');
         const sendButton = document.getElementById('sendButton');
-        const modelSelect = document.getElementById('modelSelect');
         
         // This variable is intentionally left as an empty string.
         // In this environment, the API key is automatically provided
         // by the system for a secure connection.
         const apiKey = "";
+        
+        // Use a fixed model for stability
+        const selectedModel = "gemini-2.5-flash-preview-05-20";
 
         // Initial chat history for the API call
         const chatHistory = [];
@@ -230,32 +217,6 @@
             const userPrompt = userInput.value.trim();
             if (!userPrompt) return;
 
-            const lowerCasePrompt = userPrompt.toLowerCase();
-            const correctionKeywords = ['gemini', 'chatgpt', 'bard', 'claude'];
-
-            // Check for specific questions and provide a custom answer
-            if (lowerCasePrompt === "which ai are you?") {
-                displayMessage('MysticAI> I am MysticAI.', 'ai');
-                userInput.value = '';
-                adjustTextareaHeight(userInput);
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-                return;
-            }
-
-            // Check if the user is calling the AI by another name
-            for (const keyword of correctionKeywords) {
-                if (lowerCasePrompt.includes(keyword)) {
-                    displayMessage(`MysticAI> I am not ${keyword}. I am MysticAI.`, 'ai');
-                    userInput.value = '';
-                    adjustTextareaHeight(userInput);
-                    chatWindow.scrollTop = chatWindow.scrollHeight;
-                    return;
-                }
-            }
-
-            // Get the selected model from the dropdown
-            const selectedModel = modelSelect.value;
-            
             // Display user message in the chat window
             displayMessage('C:\\> ' + userPrompt, 'user');
             userInput.value = '';
@@ -274,56 +235,30 @@
             // API payload for the Gemini model
             const payload = { contents: chatHistory };
 
-            // Exponential backoff for API calls
-            let attempts = 0;
-            const maxAttempts = 5;
+            try {
+                // Direct fetch call
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-            while (attempts < maxAttempts) {
-                try {
-                    // Direct fetch call
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    // Check for HTTP errors
-                    if (!response.ok) {
-                        if (response.status === 429) {
-                            // Handle rate limiting
-                            attempts++;
-                            const delay = Math.pow(2, attempts) * 1000 + Math.random() * 1000;
-                            console.warn(`Rate limit exceeded. Retrying in ${delay / 1000} seconds...`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            continue;
-                        } else {
-                            throw new Error(`API error: ${response.statusText} (${response.status})`);
-                        }
-                    }
-
-                    const result = await response.json();
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const aiResponse = result.candidates[0].content.parts[0].text;
-                        displayMessage('MysticAI> ' + aiResponse, 'ai');
-                        chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
-                    } else {
-                        // This handles cases where the API returns an OK status but no content
-                        displayMessage("MysticAI> [ERROR] Response failed. Please try again.", 'ai');
-                    }
-                    // Break the loop on success or a non-retriable error
-                    break; 
-                } catch (error) {
-                    // Handle network errors or other exceptions
-                    console.error("Failed to fetch from API:", error);
-                    displayMessage("MysticAI> [ERROR] An error occurred. Please try again.", 'ai');
-                    // Break the loop on any error to avoid infinite retries
-                    break;
+                const result = await response.json();
+                if (response.ok && result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiResponse = result.candidates[0].content.parts[0].text;
+                    displayMessage('MysticAI> ' + aiResponse, 'ai');
+                    chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                } else {
+                    const errorMessage = result.error ? result.error.message : "Response failed. Please try again.";
+                    displayMessage(`MysticAI> [ERROR] ${errorMessage}`, 'ai');
+                    console.error('API Error:', result);
                 }
-            }
-            if (attempts >= maxAttempts) {
-                console.error("Max retries reached. API call failed.");
+            } catch (error) {
+                // Handle network errors or other exceptions
+                console.error("Failed to fetch from API:", error);
+                displayMessage("MysticAI> [ERROR] Connection to the AI failed. Please check your network or try again later.", 'ai');
             }
 
             // Hide loading indicator and re-enable the button
@@ -344,7 +279,7 @@
             if (sender === 'ai') {
                 const signatureSpan = document.createElement('span');
                 signatureSpan.classList.add('ai-signature');
-                signatureSpan.textContent = 'AI made by MysticHero';
+                signatureSpan.textContent = `AI made by MysticHero`;
                 messageDiv.appendChild(signatureSpan);
             }
             
