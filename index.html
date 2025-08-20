@@ -189,8 +189,6 @@
 
         <!-- Input form for user messages -->
         <form id="chatForm" class="input-form" onsubmit="event.preventDefault(); sendMessage();">
-            <!-- New API key input field -->
-            
             <div class="input-row">
                 <select id="modelSelect" class="bg-black text-green-400 p-2 border border-green-400 rounded-sm">
                     <option value="gemini-2.5-flash-preview-05-20">MysticAI-2.5-flash (Fast)</option>
@@ -218,10 +216,11 @@
         const loadingIndicator = document.getElementById('loading');
         const sendButton = document.getElementById('sendButton');
         const modelSelect = document.getElementById('modelSelect');
-        // Setting the API key to an empty string. This will be automatically
-        // provided by the Canvas environment for a secure connection.
-        // For a public website, you would need to use a server-side proxy
-        // to securely handle API requests and not expose your key.
+        
+        // This variable is intentionally left as an empty string.
+        // In this environment, the API key is automatically provided
+        // by the system for a secure connection. For a public website,
+        // you would need a server-side proxy to handle this securely.
         const apiKey = "";
 
         // Initial chat history for the API call
@@ -270,12 +269,8 @@
             loadingIndicator.classList.remove('hidden');
             sendButton.disabled = true;
 
-            // The original API URL to the Gemini API
-            const originalApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
-
-            // We are using a CORS proxy to bypass security restrictions on GitHub.
-            // This is a common workaround for hosting a frontend-only app.
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalApiUrl)}`;
+            // The API URL now connects directly without a proxy.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
             // API payload for the Gemini model
             const payload = { contents: chatHistory };
@@ -287,7 +282,7 @@
 
             while (attempts < maxAttempts && !success) {
                 try {
-                    const response = await fetch(proxyUrl, {
+                    const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
