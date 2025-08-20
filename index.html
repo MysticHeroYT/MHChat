@@ -225,7 +225,7 @@
         const loadingIndicator = document.getElementById('loading');
         const sendButton = document.getElementById('sendButton');
         const modelSelect = document.getElementById('modelSelect');
-        const apiKeyInput = document.getElementById('apiKeyInput'); // New API key input element
+        const apiKeyInput = document.getElementById('apiKeyInput');
 
         // Initial chat history for the API call
         const chatHistory = [];
@@ -235,7 +235,7 @@
             const userPrompt = userInput.value.trim();
             if (!userPrompt) return;
 
-            const apiKey = apiKeyInput.value.trim(); // Get the API key from the input field
+            const apiKey = apiKeyInput.value.trim();
             if (!apiKey) {
                 displayMessage('MysticAI> [ERROR] Please enter your Gemini API key to continue.', 'ai');
                 return;
@@ -250,7 +250,7 @@
                 userInput.value = '';
                 adjustTextareaHeight(userInput);
                 chatWindow.scrollTop = chatWindow.scrollHeight;
-                return; // Exit the function to prevent an API call
+                return;
             }
 
             // Check if the user is calling the AI by another name
@@ -260,7 +260,7 @@
                     userInput.value = '';
                     adjustTextareaHeight(userInput);
                     chatWindow.scrollTop = chatWindow.scrollHeight;
-                    return; // Exit the function to prevent an API call
+                    return;
                 }
             }
 
@@ -279,9 +279,15 @@
             loadingIndicator.classList.remove('hidden');
             sendButton.disabled = true;
 
+            // The original API URL to the Gemini API
+            const originalApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+
+            // We are using a CORS proxy to bypass security restrictions on GitHub.
+            // This is a common workaround for hosting a frontend-only app.
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalApiUrl)}`;
+
             // API payload for the Gemini model
             const payload = { contents: chatHistory };
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
             // Exponential backoff for API calls
             let attempts = 0;
@@ -290,7 +296,7 @@
 
             while (attempts < maxAttempts && !success) {
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch(proxyUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
