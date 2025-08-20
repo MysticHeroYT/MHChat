@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Chat Terminal</title>
-    <!-- Tailwind CSS CDN for modern styling -->
+    <title>MHChat</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom CSS for animations and futuristic theme -->
+    <!-- Custom Styles -->
     <style>
         body {
             font-family: 'Roboto Mono', monospace;
@@ -18,193 +18,700 @@
             min-height: 100vh;
             margin: 0;
             padding: 1.25rem;
+            overflow: hidden;
         }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .blinking-cursor::after {
+            content: '_';
+            animation: blink 1s step-end infinite;
+        }
+        .chat-message-ai {
+            color: #00ff00;
+        }
+        /* Custom scrollbar for a themed look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00cc00;
+        }
+        
+        /* Custom styling for responsive sidebar */
+        #sidebar.mobile-open {
+            display: flex;
+            transform: translateX(0);
+        }
+
+        @media (max-width: 767px) {
+            #sidebar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 50;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            #main-chat-screen {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Main container of the application -->
-    <div class="flex justify-center items-center min-h-screen p-5 bg-black text-green-500 font-mono">
-        <div id="chatbot-container" class="w-full max-w-3xl h-[85vh] flex flex-col bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md overflow-hidden">
-            
-            <!-- Chat window for messages -->
-            <div id="chat-window" class="flex-grow p-8 overflow-y-auto flex flex-col gap-6 whitespace-pre-wrap">
-                <!-- Initial messages will be added here on load -->
-            </div>
-
-            <!-- Loading indicator for API calls -->
-            <div id="loading-indicator" class="hidden flex justify-center items-center gap-2 my-4">
-                <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-[bounce_1s_infinite]"></div>
-                <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-[bounce_1s_infinite_0.2s]"></div>
-                <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-[bounce_1s_infinite_0.4s]"></div>
-            </div>
-
-            <!-- Input form for user queries -->
-            <form id="input-form" class="flex flex-col p-6 gap-4 border-t-2 border-green-500">
-                <textarea
-                    id="user-input"
-                    rows="1"
-                    placeholder=">_ Type your command..."
-                    class="block w-full text-base bg-black placeholder-gray-400 focus:ring-green-500 focus:border-green-500 border-green-500 resize-none rounded-md p-4 transition-all duration-200"
-                ></textarea>
-                <button
-                    type="submit"
-                    id="submit-button"
-                    class="w-full md:w-auto bg-green-500 text-black font-bold py-3 px-6 rounded-md cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_15px_#00ff00]"
-                >
-                    EXECUTE
-                </button>
-            </form>
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-banner" class="fixed bottom-0 left-0 w-full bg-[#0a0a0a] border-t-2 border-green-500 shadow-[0_0_10px_#00ff00] p-4 text-sm z-50 transition-transform duration-300 transform translate-y-full">
+        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-white text-center md:text-left">
+                This website uses cookies to improve the user experience. By continuing, you agree to our cookie policy.
+            </p>
+            <button id="accept-cookies-btn" class="bg-green-500 text-black font-bold py-2 px-6 rounded-md hover:shadow-[0_0_8px_#00ff00] transition-shadow">
+                Accept
+            </button>
         </div>
     </div>
 
-    <script>
+    <!-- Main Application Container that manages screen views -->
+    <div id="app-container" class="flex justify-center items-center min-h-screen p-5 bg-black text-green-500 font-mono">
+        
+        <!-- Main Chat Screen -->
+        <div id="main-chat-screen" class="screen w-full max-w-5xl h-[85vh] flex flex-col md:flex-row bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md overflow-hidden">
+            
+            <!-- Sidebar for contacts and groups -->
+            <div id="sidebar" class="w-full md:w-1/3 hidden md:flex flex-col p-4 overflow-y-auto">
+                <div class="text-center font-bold text-lg mb-4">
+                    MHChat 
+                    <span id="current-user-id-display" class="font-normal text-xs text-gray-400 block break-all mt-1"></span>
+                </div>
+                
+                <div class="flex flex-col gap-2 mb-4">
+                    <button id="add-contact-btn" class="flex-grow p-2 bg-[#002200] border-2 border-green-500 rounded-md hover:shadow-[0_0_8px_#00ff00]">New Contact</button>
+                    <button id="create-group-btn" class="flex-grow p-2 bg-[#002200] border-2 border-green-500 rounded-md hover:shadow-[0_0_8px_#00ff00]">New Group</button>
+                    <button id="settings-btn" class="flex-grow p-2 bg-[#002200] border-2 border-green-500 rounded-md hover:shadow-[0_0_8px_#00ff00]">Settings</button>
+                </div>
+
+                <div id="contact-list" class="flex-grow flex flex-col gap-2">
+                    <div class="text-xs text-gray-500">CONVERSATIONS</div>
+                    <!-- Conversation items will be added here -->
+                </div>
+            </div>
+
+            <!-- Main chat window -->
+            <div id="chat-window-container" class="flex-grow flex flex-col w-full">
+                <div id="chat-header" class="p-4 bg-[#1a1a1a] border-b-2 border-green-500 text-center font-bold flex items-center gap-4">
+                    <button id="menu-btn" class="md:hidden p-1 rounded-md hover:bg-[#002200]">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <span id="chat-header-text" class="flex-grow text-center">No Conversation Selected</span>
+                </div>
+
+                <div id="chat-window" class="flex-grow p-8 overflow-y-auto flex flex-col gap-4 whitespace-pre-wrap">
+                    <!-- Messages will be added here -->
+                </div>
+
+                <!-- Image preview container -->
+                <div id="image-preview-container" class="hidden relative p-4 border-t-2 border-green-500 bg-[#0a0a0a]">
+                    <img id="image-preview" src="" alt="Image preview" class="max-h-32 rounded-md">
+                    <button id="clear-image-btn" class="absolute top-2 right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center font-bold hover:bg-red-700">&times;</button>
+                </div>
+
+                <form id="chat-input-form" class="flex p-4 gap-2 border-t-2 border-green-500">
+                    <label for="image-upload" class="bg-green-500 text-black font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-200 hover:shadow-[0_0_15px_#00ff00] flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                        </svg>
+                    </label>
+                    <input type="file" id="image-upload" class="hidden" accept="image/*">
+                    
+                    <textarea
+                        id="chat-user-input"
+                        rows="1"
+                        placeholder=">_ Type your message..."
+                        class="flex-grow text-base bg-black placeholder-gray-400 focus:ring-green-500 focus:border-green-500 border-green-500 resize-none rounded-md p-2 transition-all duration-200"
+                    ></textarea>
+                    <button
+                        type="submit"
+                        id="chat-send-btn"
+                        class="bg-green-500 text-black font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_15px_#00ff00]"
+                        disabled
+                    >
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Contact Screen -->
+        <div id="add-contact-screen" class="screen w-full max-w-5xl h-[85vh] hidden flex-col justify-center items-center bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md p-8">
+            <div class="w-full max-w-md">
+                <h2 class="text-xl font-bold mb-4 text-center">Add New Contact</h2>
+                <p class="text-sm text-gray-400 mb-2">Enter the full user ID:</p>
+                <input type="text" id="contact-id-input" placeholder="Enter User ID" class="w-full p-2 bg-black border border-green-500 rounded-md mb-2">
+                <p class="text-sm text-gray-400 mb-2">Give a nickname (optional):</p>
+                <input type="text" id="contact-alias-input" placeholder="Nickname" class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
+                <p id="contact-search-result" class="mt-4 hidden text-center"></p>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button id="cancel-contact-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
+                    <button id="add-contact-submit-btn" class="p-2 bg-green-500 text-black font-bold rounded-md">Add</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Group Screen -->
+        <div id="create-group-screen" class="screen w-full max-w-5xl h-[85vh] hidden flex-col justify-center items-center bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md p-8">
+            <div class="w-full max-w-md">
+                <h2 class="text-xl font-bold mb-4 text-center">Create New Group</h2>
+                <input type="text" id="group-name-input" placeholder="Group Name" class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
+                <div id="contact-selection-list" class="flex flex-col gap-2 max-h-40 overflow-y-auto mb-4 border border-green-500 p-2 rounded-md">
+                    <!-- Contacts will be dynamically added here -->
+                </div>
+                <p id="group-error-message" class="text-red-500 mt-4 hidden text-center"></p>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button id="cancel-group-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
+                    <button id="create-group-submit-btn" class="p-2 bg-green-500 text-black font-bold rounded-md">Create Group</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen w-full max-w-5xl h-[85vh] hidden flex-col justify-center items-center bg-[#0a0a0a] border-2 border-green-500 shadow-[0_0_20px_#00ff00] rounded-md p-8">
+            <div class="w-full max-w-md">
+                <h2 class="text-xl font-bold mb-4 text-center">Settings</h2>
+                <p class="text-sm text-gray-400 mb-2">Current User ID: <span id="settings-user-id-display" class="font-bold break-all"></span></p>
+                <p class="text-sm text-gray-400 mb-2">Change your display name:</p>
+                <input type="text" id="display-name-input" placeholder="New Display Name" class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
+                <div class="flex justify-end gap-2 mt-4">
+                    <button id="cancel-settings-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
+                    <button id="save-name-btn" class="p-2 bg-green-500 text-black font-bold rounded-md">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals that stay as pop-ups because they are in-context actions -->
+        <div id="edit-contact-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-[100]">
+            <div class="bg-[#0a0a0a] p-8 rounded-md border-2 border-green-500 shadow-[0_0_20px_#00ff00]">
+                <h2 class="text-xl font-bold mb-4">Edit Contact</h2>
+                <p class="text-sm text-gray-400 mb-2">ID: <span id="edit-contact-id-display" class="font-bold break-all"></span></p>
+                <p class="text-sm text-gray-400 mb-2">Edit nickname:</p>
+                <input type="text" id="edit-contact-alias-input" placeholder="New nickname" class="w-full p-2 bg-black border border-green-500 rounded-md mb-4">
+                <div class="flex justify-end gap-2">
+                    <button id="cancel-edit-btn" class="p-2 bg-gray-700 rounded-md">Cancel</button>
+                    <button id="save-edit-btn" class="p-2 bg-green-500 text-black font-bold rounded-md">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query, where, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // --- Core Application Logic ---
 
-        // Get elements from the DOM
-        const chatWindow = document.getElementById('chat-window');
-        const userInput = document.getElementById('user-input');
-        const inputForm = document.getElementById('input-form');
-        const submitButton = document.getElementById('submit-button');
-        const loadingIndicator = document.getElementById('loading-indicator');
+        // Firebase environment variables provided by the Canvas environment.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // IMPORTANT: Paste your API key here to make this work.
-        // This is not secure for public apps. For public use, a backend is required.
-        const apiKey = typeof __gemini_api_key !== 'undefined' ? __gemini_api_key : null;
-        const selectedModel = "gemini-2.5-flash-preview-05-20";
+        // UI elements
+        const screens = {
+            mainChat: document.getElementById('main-chat-screen'),
+            addContact: document.getElementById('add-contact-screen'),
+            createGroup: document.getElementById('create-group-screen'),
+            settings: document.getElementById('settings-screen')
+        };
+        const currentUserIdDisplay = document.getElementById('current-user-id-display');
+        const chatWindow = document.getElementById('chat-window');
+        const chatHeader = document.getElementById('chat-header');
+        const chatHeaderText = document.getElementById('chat-header-text'); // New span for header text
+        const chatUserInput = document.getElementById('chat-user-input');
+        const chatInputForm = document.getElementById('chat-input-form');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const contactListDiv = document.getElementById('contact-list');
+        const addContactBtn = document.getElementById('add-contact-btn');
+        const createGroupBtn = document.getElementById('create-group-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const cookieBanner = document.getElementById('cookie-banner');
+        const acceptCookiesBtn = document.getElementById('accept-cookies-btn');
+
+        const contactIdInput = document.getElementById('contact-id-input');
+        const contactAliasInput = document.getElementById('contact-alias-input');
+        const addContactSubmitBtn = document.getElementById('add-contact-submit-btn');
+        const contactSearchResult = document.getElementById('contact-search-result');
+
+        const groupNameInput = document.getElementById('group-name-input');
+        const contactSelectionList = document.getElementById('contact-selection-list');
+        const createGroupSubmitBtn = document.getElementById('create-group-submit-btn');
+        const groupErrorMsg = document.getElementById('group-error-message');
+
+        const settingsUserIdDisplay = document.getElementById('settings-user-id-display');
+        const displayNameInput = document.getElementById('display-name-input');
+        const saveNameBtn = document.getElementById('save-name-btn');
+
+        const editContactModal = document.getElementById('edit-contact-modal');
+        const editContactIdDisplay = document.getElementById('edit-contact-id-display');
+        const editContactAliasInput = document.getElementById('edit-contact-alias-input');
+        const saveEditBtn = document.getElementById('save-edit-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
+        const imageUploadInput = document.getElementById('image-upload');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const clearImageBtn = document.getElementById('clear-image-btn');
+
+        // Back buttons
+        const backButtons = document.querySelectorAll('[id^="cancel-"]');
+
+        // Firebase instances
+        let app, db, auth;
+        let currentUser = null;
+        let myDisplayName = '';
+        let activeConversationId = null;
+        let myContacts = {};
+        let myGroups = {};
+        let myAliases = {};
+        let chatUnsubscribe = null;
+        let selectedImage = null; // Store the Base64 image string
+
+        // Function to switch between screens
+        function showScreen(screenId) {
+            Object.values(screens).forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            screens[screenId].classList.remove('hidden');
+        }
 
         // Function to add a new message to the chat window
-        function addMessage(text, sender) {
+        function addMessage(messageText, senderId, imageContent, isSystem = false) {
             const messageElement = document.createElement('div');
-            messageElement.classList.add('max-w-[90%]', 'p-4', 'rounded-md', 'border-l-2');
-            messageElement.classList.add(sender === 'user' ? 'self-end' : 'self-start');
-            messageElement.classList.add(sender === 'user' ? 'bg-[#002200]' : 'bg-[#001100]');
+            messageElement.classList.add('p-4', 'rounded-md', 'border-l-2', 'max-w-full', 'whitespace-pre-wrap');
+            messageElement.classList.add(senderId === currentUser?.uid ? 'self-end' : 'self-start');
+            messageElement.classList.add(isSystem ? 'bg-[#1a1a1a]' : (senderId === currentUser?.uid ? 'bg-[#002200]' : 'bg-[#001100]'));
             messageElement.classList.add('border-green-500');
 
-            messageElement.textContent = text;
-            
-            // Add the "AI made by MysticHero" text for AI messages
-            if (sender === 'ai') {
-                const creditSpan = document.createElement('span');
-                creditSpan.classList.add('block', 'mt-2', 'text-xs', 'text-green-700', 'italic');
-                creditSpan.textContent = 'AI made by MysticHero';
-                messageElement.appendChild(creditSpan);
+            if (imageContent) {
+                const imgElement = document.createElement('img');
+                imgElement.src = imageContent;
+                imgElement.alt = "Sent image";
+                imgElement.classList.add('rounded-md', 'max-w-full', 'h-auto', 'mb-2');
+                messageElement.appendChild(imgElement);
             }
-
+            
+            // Get the display name from the alias map, or use the ID as fallback
+            const displayName = senderId === currentUser?.uid ? myDisplayName : (myAliases[senderId] || senderId.substring(0, 8) + '...');
+            const textNode = document.createTextNode(`${displayName}> ${messageText}`);
+            messageElement.appendChild(textNode);
+            
             chatWindow.appendChild(messageElement);
-            // Scroll to the bottom to show the newest message
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        // Function to handle the loading state
-        function setLoading(isLoading) {
-            if (isLoading) {
-                loadingIndicator.classList.remove('hidden');
-                submitButton.disabled = true;
-            } else {
-                loadingIndicator.classList.add('hidden');
-                submitButton.disabled = false;
+        // Function to select a conversation and load messages
+        async function selectConversation(conversationId, title) {
+            if (chatUnsubscribe) {
+                chatUnsubscribe(); // Unsubscribe from the previous chat
             }
+
+            activeConversationId = conversationId;
+            chatHeaderText.textContent = title;
+            chatWindow.innerHTML = ''; // Clear the chat window
+
+            // Close sidebar on mobile after selecting a conversation
+            if (window.innerWidth < 768) {
+                sidebar.classList.remove('mobile-open');
+                sidebar.classList.add('hidden');
+            }
+
+            const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'conversations', conversationId, 'messages');
+            const q = query(messagesRef, orderBy('timestamp'));
+
+            chatUnsubscribe = onSnapshot(q, async (snapshot) => {
+                snapshot.docChanges().forEach(async (change) => {
+                    if (change.type === "added") {
+                        const data = change.doc.data();
+                        addMessage(data.messageText || '', data.senderId, data.imageContent);
+                    }
+                });
+            });
         }
 
-        // Handles the form submission
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            const userPrompt = userInput.value.trim();
-            if (!userPrompt) return;
+        // Sanitize user input to prevent XSS attacks
+        function sanitizeMessage(message) {
+            let sanitized = message.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, "");
+            sanitized = sanitized.replace(/on\w+="[^"]*"/gim, "");
+            return sanitized;
+        }
 
-            addMessage(`>_ ${userPrompt}`, 'user');
-            userInput.value = '';
-            setLoading(true);
+        // Handles sending a message
+        async function handleSendMessage(e) {
+            e.preventDefault();
+            const messageText = chatUserInput.value.trim();
             
-            if (!apiKey) {
-                addMessage("Terminal> [ERROR] API key not found. Please paste a valid key into the script.", 'ai');
-                setLoading(false);
+            if ((!messageText && !selectedImage) || !activeConversationId) {
                 return;
             }
 
-            // API URL and payload
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
-            const payload = { 
-                contents: [{ 
-                    role: "user", 
-                    parts: [{ text: userPrompt }] 
-                }] 
-            };
+            const sanitizedMessage = sanitizeMessage(messageText);
 
             try {
-                // Exponential backoff for retries to handle rate limiting or temporary network issues
-                let response, result;
-                let retries = 0;
-                const maxRetries = 5;
-                const baseDelay = 1000; // 1 second
+                const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'conversations', activeConversationId, 'messages');
+                const messageData = {
+                    senderId: currentUser.uid,
+                    timestamp: serverTimestamp()
+                };
 
-                while (retries < maxRetries) {
-                    try {
-                        response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-
-                        result = await response.json();
-                        
-                        if (response.ok) {
-                            break; // Success, exit the retry loop
-                        } else if (response.status === 429) {
-                            // Too Many Requests, retry with delay
-                            console.warn(`Rate limit exceeded. Retrying in ${baseDelay * Math.pow(2, retries)}ms...`);
-                            await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
-                            retries++;
-                        } else {
-                            // Other error, break and handle it
-                            break;
-                        }
-                    } catch (error) {
-                        console.error("Fetch attempt failed:", error);
-                        await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries)));
-                        retries++;
-                    }
+                if (sanitizedMessage) {
+                    messageData.messageText = sanitizedMessage;
                 }
-
-                let aiResponse = "Response failed. Please try again.";
+                if (selectedImage) {
+                    messageData.imageContent = selectedImage;
+                }
                 
-                if (result && result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    aiResponse = result.candidates[0].content.parts[0].text;
-                } else if (result && result.error) {
-                    aiResponse = `[ERROR] ${result.error.message}`;
-                    console.error('API Error:', result);
-                } else {
-                    aiResponse = "Terminal> [ERROR] Failed to get a valid response from the API after multiple attempts.";
-                }
-
-                addMessage(`Terminal> ${aiResponse}`, 'ai');
-
+                await addDoc(messagesRef, messageData);
+                
+                chatUserInput.value = '';
+                clearImagePreview();
             } catch (error) {
-                console.error("Connection failed:", error);
-                addMessage("Terminal> [ERROR] Connection to the AI failed. Please check your network or try again later.", 'ai');
-            } finally {
-                setLoading(false);
+                console.error("Error sending message:", error);
+                addMessage("Failed to send message.", "SYSTEM", null, true);
             }
         }
-
-        // Initialize the chatbot on window load
-        window.onload = () => {
-            addMessage('Terminal> Initializing...', 'ai');
-            setTimeout(() => addMessage('Terminal> AI online. Awaiting command...', 'ai'), 1000);
+        
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                console.error("Invalid file type. Please select an image.");
+                clearImagePreview();
+                return;
+            }
             
-            inputForm.addEventListener('submit', handleFormSubmit);
+            const reader = new FileReader();
+            reader.onload = () => {
+                selectedImage = reader.result;
+                imagePreview.src = selectedImage;
+                imagePreviewContainer.classList.remove('hidden');
+                chatSendBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
 
-            userInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    handleFormSubmit(e);
-                }
+        function clearImagePreview() {
+            selectedImage = null;
+            imageUploadInput.value = '';
+            imagePreview.src = '';
+            imagePreviewContainer.classList.add('hidden');
+            if (chatUserInput.value.trim() === '') {
+                chatSendBtn.disabled = true;
+            }
+        }
+        
+        // Populates the sidebar with contacts and groups
+        function renderSidebar() {
+            contactListDiv.innerHTML = '<div class="text-xs text-gray-500 mb-2">CONVERSATIONS</div>';
+            currentUserIdDisplay.textContent = `${myDisplayName} [${currentUser.uid.substring(0, 8)}...]`;
+
+            Object.keys(myContacts).forEach(contactUid => {
+                const contactAlias = myAliases[contactUid] || contactUid.substring(0, 8) + '...';
+                const conversationId = [currentUser.uid, contactUid].sort().join('_');
+
+                const contactItem = document.createElement('div');
+                contactItem.classList.add('flex', 'justify-between', 'items-center', 'gap-2', 'p-2', 'bg-[#002200]', 'border', 'border-green-500', 'rounded-md', 'text-left', 'hover:bg-[#003300]', 'transition-colors');
+
+                const contactButton = document.createElement('button');
+                contactButton.textContent = contactAlias;
+                contactButton.classList.add('flex-grow', 'text-left');
+                contactButton.onclick = () => selectConversation(conversationId, contactAlias);
+                contactItem.appendChild(contactButton);
+
+                const editButton = document.createElement('button');
+                editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500 hover:text-green-300" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                        </svg>`;
+                editButton.title = "Edit nickname";
+                editButton.onclick = (e) => {
+                    e.stopPropagation();
+                    editContact(contactUid);
+                };
+                contactItem.appendChild(editButton);
+
+                contactListDiv.appendChild(contactItem);
             });
+
+            Object.keys(myGroups).forEach(groupId => {
+                const groupName = myGroups[groupId];
+                const groupItem = document.createElement('button');
+                groupItem.textContent = `GROUP: ${groupName}`;
+                groupItem.classList.add('p-2', 'bg-[#002200]', 'border', 'border-green-500', 'rounded-md', 'text-left', 'hover:bg-[#003300]', 'transition-colors');
+                groupItem.onclick = () => selectConversation(groupId, `GROUP: ${groupName}`);
+                contactListDiv.appendChild(groupItem);
+            });
+        }
+        
+        function editContact(contactId) {
+            editContactModal.classList.remove('hidden');
+            editContactIdDisplay.textContent = contactId;
+            editContactAliasInput.value = myAliases[contactId] || '';
+            
+            // Remove previous event listener to prevent duplicates
+            saveEditBtn.onclick = null;
+            saveEditBtn.onclick = async () => {
+                const newAlias = editContactAliasInput.value.trim();
+                const contactToUpdate = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                
+                try {
+                    await updateDoc(contactToUpdate, {
+                        [`contactAliases.${contactId}`]: newAlias
+                    });
+                    editContactModal.classList.add('hidden');
+                } catch (error) {
+                    console.error("Error saving nickname:", error);
+                }
+            };
+        }
+
+        function handleCookieConsent() {
+            const hasAcceptedCookies = localStorage.getItem('accepted-cookies');
+            if (!hasAcceptedCookies) {
+                cookieBanner.classList.remove('translate-y-full');
+            }
+            
+            acceptCookiesBtn.addEventListener('click', () => {
+                localStorage.setItem('accepted-cookies', 'true');
+                cookieBanner.classList.add('translate-y-full');
+            });
+        }
+        
+        async function initApp() {
+            try {
+                showScreen('mainChat');
+
+                if (Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Firebase configuration not available.");
+                }
+                
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        
+                        const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                        const userDoc = await getDoc(userDocRef);
+                        
+                        // Create user profile if it doesn't exist.
+                        if (!userDoc.exists()) {
+                            await setDoc(userDocRef, {
+                                contacts: ['localhost-contact-id'],
+                                contactAliases: {'localhost-contact-id': 'MysticHero'},
+                                myDisplayName: currentUser.uid.substring(0, 8),
+                                createdAt: serverTimestamp()
+                            });
+                        }
+                        
+                        // Ensure localhost user exists (public)
+                        const localhostContactId = 'localhost-contact-id';
+                        const localhostDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', localhostContactId);
+                        const localhostDoc = await getDoc(localhostDocRef);
+                        if (!localhostDoc.exists()) {
+                            await setDoc(localhostDocRef, {
+                                username: 'localhost',
+                                createdAt: serverTimestamp()
+                            });
+                        }
+
+                        // Listen for contacts, aliases and display name updates
+                        onSnapshot(userDocRef, async (updatedDoc) => {
+                            if (updatedDoc.exists()) {
+                                const updatedData = updatedDoc.data();
+                                myContacts = {};
+                                for (const contactUid of updatedData.contacts || []) {
+                                    myContacts[contactUid] = contactUid; // Use ID as placeholder
+                                }
+                                myAliases = updatedData.contactAliases || {};
+                                myDisplayName = updatedData.myDisplayName || currentUser.uid.substring(0, 8);
+                                renderSidebar();
+                            }
+                        });
+
+                        // Listen for group updates
+                        onSnapshot(query(collection(db, `artifacts/${appId}/public/data/conversations`), where('members', 'array-contains', currentUser.uid)), (snapshot) => {
+                            myGroups = {};
+                            snapshot.forEach(doc => {
+                                myGroups[doc.id] = doc.data().name;
+                            });
+                            renderSidebar();
+                        });
+                        
+                        chatSendBtn.disabled = false;
+                    }
+                });
+
+                // Add event listeners
+                chatInputForm.addEventListener('submit', handleSendMessage);
+                chatUserInput.addEventListener('input', () => {
+                    chatSendBtn.disabled = !chatUserInput.value.trim() && !selectedImage;
+                });
+                
+                imageUploadInput.addEventListener('change', handleImageUpload);
+                clearImageBtn.addEventListener('click', clearImagePreview);
+
+                addContactBtn.addEventListener('click', () => {
+                    contactIdInput.value = '';
+                    contactAliasInput.value = '';
+                    contactSearchResult.classList.add('hidden');
+                    showScreen('addContact');
+                });
+                
+                addContactSubmitBtn.addEventListener('click', async () => {
+                    const contactUid = contactIdInput.value.trim();
+                    const alias = contactAliasInput.value.trim() || contactUid.substring(0, 8) + '...';
+
+                    if (!contactUid || contactUid === currentUser.uid) {
+                        contactSearchResult.textContent = 'Invalid user ID or it is your own ID.';
+                        contactSearchResult.classList.remove('hidden');
+                        return;
+                    }
+
+                    const myUserDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                    const myUserData = (await getDoc(myUserDocRef)).data();
+                    const currentContacts = myUserData.contacts || [];
+
+                    if (currentContacts.includes(contactUid)) {
+                        contactSearchResult.textContent = 'This user is already in your contacts.';
+                        contactSearchResult.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    await updateDoc(myUserDocRef, {
+                        contacts: [...currentContacts, contactUid],
+                        [`contactAliases.${contactUid}`]: alias
+                    });
+                    
+                    contactSearchResult.textContent = `User with ID '${contactUid}' added as '${alias}'!`;
+                    contactSearchResult.classList.remove('hidden');
+                });
+
+                createGroupBtn.addEventListener('click', async () => {
+                    contactSelectionList.innerHTML = '';
+                    
+                    const myUserDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid));
+                    const myContactUids = myUserDoc.exists() ? myUserDoc.data().contacts || [] : [];
+                    
+                    myContactUids.forEach(contactUid => {
+                        const contactAlias = myAliases[contactUid] || contactUid.substring(0, 8) + '...';
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.id = `contact-${contactUid}`;
+                        checkbox.value = contactUid;
+                        checkbox.classList.add('mr-2');
+                        const label = document.createElement('label');
+                        label.htmlFor = `contact-${contactUid}`;
+                        label.textContent = contactAlias;
+                        const div = document.createElement('div');
+                        div.appendChild(checkbox);
+                        div.appendChild(label);
+                        contactSelectionList.appendChild(div);
+                    });
+
+                    groupNameInput.value = '';
+                    groupErrorMsg.classList.add('hidden');
+                    showScreen('createGroup');
+                });
+                
+                createGroupSubmitBtn.addEventListener('click', async () => {
+                    const groupName = groupNameInput.value.trim();
+                    const members = [currentUser.uid];
+                    const checkboxes = contactSelectionList.querySelectorAll('input[type="checkbox"]:checked');
+                    checkboxes.forEach(checkbox => members.push(checkbox.value));
+                    
+                    if (groupName.length === 0 || members.length < 2) {
+                        groupErrorMsg.textContent = "Please enter a group name and select at least one contact.";
+                        groupErrorMsg.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    try {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'conversations'), {
+                            type: 'group',
+                            name: groupName,
+                            members: members,
+                            createdAt: serverTimestamp()
+                        });
+                        
+                        addMessage(`Group '${groupName}' created!`, "SYSTEM", null, true);
+                        showScreen('mainChat');
+                    } catch (error) {
+                        console.error("Error creating group:", error);
+                        addMessage("Failed to create group.", "SYSTEM", null, true);
+                    }
+                });
+                
+                settingsBtn.addEventListener('click', () => {
+                    settingsUserIdDisplay.textContent = currentUser.uid;
+                    displayNameInput.value = myDisplayName;
+                    showScreen('settings');
+                });
+                
+                saveNameBtn.addEventListener('click', async () => {
+                    const newDisplayName = displayNameInput.value.trim();
+                    if (newDisplayName) {
+                        try {
+                            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                            await updateDoc(userDocRef, { myDisplayName: newDisplayName });
+                            showScreen('mainChat');
+                        } catch (error) {
+                            console.error("Error saving display name:", error);
+                        }
+                    }
+                });
+
+                // Universal back buttons
+                backButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        showScreen('mainChat');
+                    });
+                });
+                
+                // Add event listener for the new menu button
+                menuBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('hidden');
+                    sidebar.classList.toggle('flex');
+                    sidebar.classList.toggle('mobile-open');
+                });
+                
+            } catch (error) {
+                console.error("Initialization failed:", error);
+            }
+        }
+        
+        window.onload = () => {
+            initApp();
+            handleCookieConsent();
         };
     </script>
 </body>
