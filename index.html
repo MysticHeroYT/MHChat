@@ -85,7 +85,8 @@
 
         /* Styling for the select and textarea inputs */
         .input-form select,
-        .input-form textarea {
+        .input-form textarea,
+        .input-form input {
             flex-grow: 1;
             background-color: #000000;
             border: 1px solid #00ff00;
@@ -99,7 +100,8 @@
 
         /* Focus state for inputs */
         .input-form textarea:focus,
-        .input-form select:focus {
+        .input-form select:focus,
+        .input-form input:focus {
             box-shadow: 0 0 10px #00ff00;
         }
         
@@ -187,6 +189,15 @@
 
         <!-- Input form for user messages -->
         <form id="chatForm" class="input-form" onsubmit="event.preventDefault(); sendMessage();">
+            <!-- New API key input field -->
+            <div class="input-row">
+                <input
+                    type="text"
+                    id="apiKeyInput"
+                    placeholder="Enter your Gemini API Key..."
+                    class="block w-full text-base placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 border-gray-300"
+                />
+            </div>
             <div class="input-row">
                 <select id="modelSelect" class="bg-black text-green-400 p-2 border border-green-400 rounded-sm">
                     <option value="gemini-2.5-flash-preview-05-20">MysticAI-2.5-flash (Fast)</option>
@@ -214,6 +225,7 @@
         const loadingIndicator = document.getElementById('loading');
         const sendButton = document.getElementById('sendButton');
         const modelSelect = document.getElementById('modelSelect');
+        const apiKeyInput = document.getElementById('apiKeyInput'); // New API key input element
 
         // Initial chat history for the API call
         const chatHistory = [];
@@ -222,6 +234,12 @@
         async function sendMessage() {
             const userPrompt = userInput.value.trim();
             if (!userPrompt) return;
+
+            const apiKey = apiKeyInput.value.trim(); // Get the API key from the input field
+            if (!apiKey) {
+                displayMessage('MysticAI> [ERROR] Please enter your Gemini API key to continue.', 'ai');
+                return;
+            }
 
             const lowerCasePrompt = userPrompt.toLowerCase();
             const correctionKeywords = ['gemini', 'chatgpt', 'bard', 'claude'];
@@ -263,7 +281,6 @@
 
             // API payload for the Gemini model
             const payload = { contents: chatHistory };
-            const apiKey = ""; // Leave this as-is; the environment will provide the key
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
             // Exponential backoff for API calls
