@@ -71,7 +71,7 @@
         const loadingIndicator = document.getElementById('loading-indicator');
 
         // This variable is intentionally left as an empty string. The system automatically handles the API key.
-        const apiKey = "";
+        const apiKey = typeof __api_key !== 'undefined' ? __api_key : '';
         const selectedModel = "gemini-2.5-flash-preview-05-20";
 
         // Function to add a new message to the chat window
