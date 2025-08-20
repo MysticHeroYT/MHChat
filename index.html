@@ -79,6 +79,7 @@
         // On your public website, a backend function will need to provide these.
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const geminiApiKey = typeof __gemini_api_key !== 'undefined' ? __gemini_api_key : null;
         const selectedModel = "gemini-2.5-flash-preview-05-20";
 
         // Firebase service instances
@@ -127,9 +128,15 @@
             addMessage(`C:\\> ${userPrompt}`, 'user');
             userInput.value = '';
             setLoading(true);
+            
+            if (!geminiApiKey) {
+                addMessage("MysticAI> [ERROR] Gemini API key not found. Please provide a key to enable the chatbot.", 'ai');
+                setLoading(false);
+                return;
+            }
 
             // API URL and payload, using a securely provided API key from the environment.
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${firebaseConfig.apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${geminiApiKey}`;
             const payload = { 
                 contents: [{ 
                     role: "user", 
