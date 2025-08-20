@@ -268,7 +268,7 @@
             loadingIndicator.classList.remove('hidden');
             sendButton.disabled = true;
 
-            // The API URL for the Gemini API. We're no longer using a proxy.
+            // The API URL for the Gemini API.
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
             
             // API payload for the Gemini model
@@ -277,11 +277,10 @@
             // Exponential backoff for API calls
             let attempts = 0;
             const maxAttempts = 5;
-            let success = false;
 
-            while (attempts < maxAttempts && !success) {
+            while (attempts < maxAttempts) {
                 try {
-                    // Direct fetch call without the proxy
+                    // Direct fetch call
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -310,16 +309,20 @@
                         displayMessage('MysticAI> ' + aiResponse, 'ai');
                         chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
                     } else {
+                        // This handles cases where the API returns an OK status but no content
                         displayMessage("MysticAI> [ERROR] Response failed. Please try again.", 'ai');
                     }
-                    success = true; // Exit the loop on success
+                    // Break the loop on success or a non-retriable error
+                    break; 
                 } catch (error) {
+                    // Handle network errors or other exceptions
                     console.error("Failed to fetch from API:", error);
                     displayMessage("MysticAI> [ERROR] An error occurred. Please try again.", 'ai');
-                    success = true; // Exit the loop on other errors
+                    // Break the loop on any error to avoid infinite retries
+                    break;
                 }
             }
-            if (!success) {
+            if (attempts >= maxAttempts) {
                 console.error("Max retries reached. API call failed.");
             }
 
