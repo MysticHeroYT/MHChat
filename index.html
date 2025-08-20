@@ -269,9 +269,14 @@
             loadingIndicator.classList.remove('hidden');
             sendButton.disabled = true;
 
-            // The API URL now connects directly without a proxy.
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+            // The original API URL to the Gemini API
+            const originalApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
+            // This CORS proxy is used to bypass browser security restrictions.
+            // This is necessary because the app is running on a different domain
+            // than the API.
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalApiUrl)}`;
+            
             // API payload for the Gemini model
             const payload = { contents: chatHistory };
 
@@ -282,7 +287,7 @@
 
             while (attempts < maxAttempts && !success) {
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch(proxyUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
